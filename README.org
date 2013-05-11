@@ -1,0 +1,36 @@
+* What this is
+  This is a list of HOWTOs I've created.
+
+* Why this is here
+  Mostly documenting my own learning process on various tools.
+  Hopefully useful as reference.
+
+* Github's treatment of .org files
+  Github has /partial/ support for .org files.
+  https://github.com/novoid/github-orgmode-tests/blob/master/README.org
+
+  This means that .org files I put here will be partially formatted,
+  some parts correctly, some parts incorrectly.
+
+  As far as I know, there is no way, short of renaming .org files .txt
+  to keep github from doing it's partial formatting of org files,
+  so when they display you will not see what I intended.
+
+  I've included .pdf files which show things as intended.
+  
+  I've also included .html versions, which generally look pretty good,
+  but (at least in my browser) you have to download them and then
+  open them.
+
+  Thankfully, when you download the repository you get the .org
+  files as I uploaded them and then, if you're using org mode,
+  you can pull them in, work with them, execute the examples, etc.
+
+Enjoy.
+
+---George Jones
+  
+  
+  
+
+

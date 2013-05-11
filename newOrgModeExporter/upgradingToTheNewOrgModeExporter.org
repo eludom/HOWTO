@@ -32,11 +32,10 @@
      (setq org-export-babel-evaluate nil)
      (setq org-confirm-babel-evaluate nil)
      (setq org-babel-sh-command "bash")
-     (require 'ox-bibtex)
      #+END_SRC
 
      #+RESULTS:
-     : ox-bibtex
+     : bash
 
 ** Emacs Version
    #+BEGIN_SRC elisp :exports both
