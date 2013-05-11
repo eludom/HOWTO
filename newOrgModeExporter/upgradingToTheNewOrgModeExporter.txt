@@ -1,0 +1,283 @@
+ ______________________________________________________________________
+
+	      UPGRADING TO THE NEW EMACS ORG-MODE EXPORTER
+
+  George Jones <gmj AT pobox DOT com>, and "eludom" most other places.
+ ______________________________________________________________________
+
+
+			     2013-05-10 Fri
+
+
+1 What this is
+==============
+
+  This documents my process of upgrading to the new org-mode exporter.
+  [http://orgmode.org/worg/exporters/ox-overview.html]
+
+
+2 Setup
+=======
+
+2.1 Some preliminary setup to make execution of these examples work
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Add this stuff to your ~/.emacs.d/init.el or otherwise eval it.
+
+  See [http://orgmode.org/worg/org-contrib/babel/intro.html].
+
+  ,----
+  | (org-babel-do-load-languages
+  |     'org-babel-load-languages '((sh . t) (lisp . t) ))
+  | (setq org-export-babel-evaluate nil)
+  | (setq org-confirm-babel-evaluate nil)
+  | (setq org-babel-sh-command "bash")
+  | (require 'ox-bibtex)
+  `----
+
+
+2.2 Emacs Version
+~~~~~~~~~~~~~~~~~
+
+  ,----
+  | (emacs-version)
+  `----
+
+  ,----
+  | GNU Emacs 24.3.50.1 (x86_64-pc-linux-gnu, GTK+ Version 3.4.2)
+  |  of 2013-04-21 on wani09, modified by Debian
+  `----
+
+
+2.3 Initial Org Version
+~~~~~~~~~~~~~~~~~~~~~~~
+
+  ,----
+  | (org-version)
+  `----
+
+  ,----
+  | 7.9.3f
+  `----
+
+
+3 Installation
+==============
+
+  - See [http://orgmode.org/manual/Installation.html]
+
+
+3.1 DONE Initial pull of latest org-mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ,----
+  | set -x -u
+  | date
+  | cd ~
+  | mkdir -p ~/src
+  | cd ~/src
+  | set +x # errors OK
+  | git clone git://orgmode.org/org-mode.git 2>&1
+  | set -x
+  | ls -r -d -1 $PWD/{*,.*}
+  `----
+
+
+3.2 DONE Pull latest updates to org-mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ,----
+  | set -x -u
+  | date
+  | cd ~/src/org-mode
+  | set +x # errors OK   
+  | git pull 2>&1
+  | set -x
+  | ls -r -d -1 $PWD/{*,.*}
+  `----
+
+
+3.3 DONE Make Autoloads
+~~~~~~~~~~~~~~~~~~~~~~~
+
+  ,----
+  | set -x -u
+  | date
+  | cd ~/src/org-mode
+  | make autoloads 2>&1
+  `----
+
+
+3.4 DONE Make sure we are using the correct version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Add this to your emacs setup (~/.emacs or ~/emacs.d/init.el)
+
+  ,----
+  | (add-to-list 'load-path "~/src/org-mode/lisp/")
+  | (add-to-list 'load-path "~/src/org-mode/contrib/lisp/" t)
+  `----
+
+
+4 DONE Run a few tests
+======================
+
+4.1 Do we have the new Org Version?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ,----
+  | (org-version)
+  `----
+
+  ,----
+  | 8.0.2
+  `----
+
+
+4.2 DONE Export to ASCII
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Export current buffer to ASCII and open in other window
+  ,----
+  | CTRL-C CTRL-E t A
+  `----
+
+
+4.3 DONE Export to HTML
+~~~~~~~~~~~~~~~~~~~~~~~
+
+  Export current buffer to HTML and open in browser.
+  ,----
+  | CTRL-C CTRL-E h o
+  `----
+
+
+5 DONE Export to pdf via LaTeX
+==============================
+
+  Now we get a little crazy.  Export to pdf via LaTeX.
+
+
+5.1 DONE Install necessary packages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  First, we'll have to install some stuff.  I'm testing this on a an
+  Ubuntu Linux system (12.04 Security Onion distro), so your mileage may
+  vary if your on some other platform (Mac, Red-Hat, etc)
+
+  ,----
+  | set -x -u
+  | date
+  | 
+  | #
+  | # Pay no attention to the man behind the curtain.
+  | #
+  | # this goo is needed to prompt for a sudo password
+  | # while executing a sudo(1) command in bash under org-babel.
+  | echo -e "#! /bin/bash\n/usr/bin/gksudo -p -m Password" > /tmp/gksudo-stdout
+  | chmod +x /tmp/gksudo-stdout
+  | SUDO_ASKPASS="/tmp/gksudo-stdout" sudo -A -s
+  | #
+  | # Thanks to Sylvain Rousseau: http://comments.gmane.org/gmane.emacs.orgmode/52979
+  | #
+  | # As you were.  That's over.  Now just do what you need to with sudo.
+  | #
+  | 
+  | sudo id # just to make sure
+  | 
+  | sudo apt-get -y install texlive 2>&1
+  | sudo apt-get -y install texlive-latex-extra 2>&1
+  | sudo apt-get -y install texlive-bibtex-extra 2>&1
+  | sudo apt-get -y install bibtex2html 2>&1
+  | sudo apt-get -y install texlive-plain-extra 2>&1
+  | sudo apt-get -y install xpdf 2>&1
+  `----
+
+
+6 DONE Export this document to pdf
+==================================
+
+6.1 DONE Export to PDF
+~~~~~~~~~~~~~~~~~~~~~~
+
+  Export current buffer to PDF and open
+  ,----
+  | CTRL-C CTRL-E l o
+  `----
+
+
+6.2 If at first you don't succeed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Check the `*Messages*' buffer for errors.  You might have to run
+  pdflatex on the resulting tex file by hand to diagnose errors.  Most
+  likely problems are missing fonts or styles requiring more packages.
+
+
+6.3 open the pdf file
+~~~~~~~~~~~~~~~~~~~~~
+
+  ,----
+  | CTRL-C CTRL-E l o
+  `----
+  should have opened the pdf file, but maybe I have something configured
+  wrong, so we open in emacs directly with
+  ,----
+  | CTRL-X CTRL-F
+  `----
+
+
+7 Open Issues
+=============
+
+7.1 Things not quite working in the new exporter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+7.1.1 TODO Get citations and bibliography working in HTML and LaTeX
+-------------------------------------------------------------------
+
+  - Old exporter had org-exp-bibtex in contrib
+  - New exporter will have ox-bibtex.el
+    + port by Nicolas Goaziou
+    + I've done some testing.  LaTeX works.  HTML has a few issues.
+
+
+7.2 Thing I might not understand in the new exporter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+7.2.1 TODO Understand what happened to #+TEXT in the new exporter?
+------------------------------------------------------------------
+
+  How do you specify text that is to be before the first section?
+
+
+7.2.2 TODO Understand the template categories for export ?
+----------------------------------------------------------
+
+  I want to insert a default set of headers, I typed
+  ,----
+  | CTRL-C CTRL-E #
+  `----
+  and it asks me for a "Options Category?"  What's that?  "?" does not
+  list options.
+
+
+7.2.3 TODO Understand why PDF file links not opening the file
+-------------------------------------------------------------
+
+
+8 Feedback
+==========
+
+8.1 Send me suggestions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+  If you send me suggestions, I may incorporate them in future versions.
+
+
+8.2 Hack the source directly on github
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Alternately, you can hack the .org source directly.  The source to
+  this document is available on github under
+  [https://github.com/eludom/HOWTO]

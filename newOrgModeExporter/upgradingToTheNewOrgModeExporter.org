@@ -1,0 +1,558 @@
+* Title, Author, etc.						   :noexport:
+#+TITLE:     Upgrading to the new Emacs org-mode exporter
+#+AUTHOR:    George Jones <gmj AT pobox DOT com>, and "eludom" most other places.
+#+EMAIL:     gmj@so
+#+DATE:      2013-05-10 Fri
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:   
+#+LINK_HOME: 
+#+XSLT:
+#+OPTIONS:   TOC:nil
+
+* What this is
+  This documents my process of upgrading to the new org-mode exporter.
+  http://orgmode.org/worg/exporters/ox-overview.html
+
+* Setup
+** Some preliminary setup to make execution of these examples work
+   Add this stuff to your ~/.emacs.d/init.el or otherwise eval it.
+
+   See http://orgmode.org/worg/org-contrib/babel/intro.html.
+     
+     #+BEGIN_SRC emacs-lisp :exports code
+     (org-babel-do-load-languages
+         'org-babel-load-languages '((sh . t) (lisp . t) ))
+     (setq org-export-babel-evaluate nil)
+     (setq org-confirm-babel-evaluate nil)
+     (setq org-babel-sh-command "bash")
+     (require 'ox-bibtex)
+     #+END_SRC
+
+     #+RESULTS:
+     : ox-bibtex
+
+** Emacs Version
+   #+BEGIN_SRC elisp :exports both
+   (emacs-version)
+   #+END_SRC
+
+   #+RESULTS:
+   : GNU Emacs 24.3.50.1 (x86_64-pc-linux-gnu, GTK+ Version 3.4.2)
+   :  of 2013-04-21 on wani09, modified by Debian
+
+** Initial Org Version
+   #+BEGIN_SRC elisp :exports both
+   (org-version)
+   #+END_SRC
+
+   #+RESULTS:
+   : 7.9.3f
+
+* Installation
+   - See http://orgmode.org/manual/Installation.html
+** DONE Initial pull of latest org-mode
+   #+BEGIN_SRC sh :exports code :results output
+   set -x -u
+   date
+   cd ~
+   mkdir -p ~/src
+   cd ~/src
+   set +x # errors OK
+   git clone git://orgmode.org/org-mode.git 2>&1
+   set -x
+   ls -r -d -1 $PWD/{*,.*}
+   #+END_SRC
+
+   #+RESULTS:
+   : Sat May 11 10:09:35 UTC 2013
+   : fatal: destination path 'org-mode' already exists and is not an empty directory.
+   : /home/gmj/src/org-mode
+   : /home/gmj/src/..
+   : /home/gmj/src/.
+
+** DONE Pull latest updates to org-mode
+   #+BEGIN_SRC sh :exports code :results output
+   set -x -u
+   date
+   cd ~/src/org-mode
+   set +x # errors OK   
+   git pull 2>&1
+   set -x
+   ls -r -d -1 $PWD/{*,.*}
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   Sat May 11 10:09:24 UTC 2013
+   Already up-to-date.
+   /home/gmj/src/org-mode/testing
+   /home/gmj/src/org-mode/request-assign-future.txt
+   /home/gmj/src/org-mode/README_maintainer
+   /home/gmj/src/org-mode/README_git
+   /home/gmj/src/org-mode/README_ELPA
+   /home/gmj/src/org-mode/README_contribute
+   /home/gmj/src/org-mode/README
+   /home/gmj/src/org-mode/mk
+   /home/gmj/src/org-mode/Makefile
+   /home/gmj/src/org-mode/lisp
+   /home/gmj/src/org-mode/.gitmodules
+   /home/gmj/src/org-mode/.gitignore
+   /home/gmj/src/org-mode/.git
+   /home/gmj/src/org-mode/etc
+   /home/gmj/src/org-mode/doc
+   /home/gmj/src/org-mode/.dir-settings.el
+   /home/gmj/src/org-mode/.dir-locals.el
+   /home/gmj/src/org-mode/COPYING
+   /home/gmj/src/org-mode/contrib
+   /home/gmj/src/org-mode/..
+   /home/gmj/src/org-mode/.
+#+end_example
+
+** DONE Make Autoloads
+   #+BEGIN_SRC sh :exports code :results output
+   set -x -u
+   date
+   cd ~/src/org-mode
+   make autoloads 2>&1
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   Sat May 11 14:04:01 UTC 2013
+   make -C lisp autoloads
+   make[1]: Entering directory `/home/gmj/src/org-mode/lisp'
+   rm -f org-version.el org-loaddefs.el org-version.elc org-loaddefs.elc org-install.elc
+   org-version: 8.0.2 (release_8.0.2-105-g4e0fad)
+   Loading /home/gmj/src/org-mode/lisp/org-compat.el (source)...
+   Loading /home/gmj/src/org-mode/mk/org-fixup.el (source)...
+   Saving file /home/gmj/src/org-mode/lisp/org-version.el...
+   Wrote /home/gmj/src/org-mode/lisp/org-version.el
+   org-loaddefs: 8.0.2 (release_8.0.2-105-g4e0fad)
+   Loading /home/gmj/src/org-mode/lisp/org-compat.el (source)...
+   Loading /home/gmj/src/org-mode/mk/org-fixup.el (source)...
+   Generating autoloads for ob-C.el...
+   Generating autoloads for ob-C.el...done
+   Generating autoloads for ob-R.el...
+   Generating autoloads for ob-R.el...done
+   Generating autoloads for ob-asymptote.el...
+   Generating autoloads for ob-asymptote.el...done
+   Generating autoloads for ob-awk.el...
+   Generating autoloads for ob-awk.el...done
+   Generating autoloads for ob-calc.el...
+   Generating autoloads for ob-calc.el...done
+   Generating autoloads for ob-clojure.el...
+   Generating autoloads for ob-clojure.el...done
+   Generating autoloads for ob-comint.el...
+   Generating autoloads for ob-comint.el...done
+   Generating autoloads for ob-core.el...
+   Generating autoloads for ob-core.el...done
+   Generating autoloads for ob-css.el...
+   Generating autoloads for ob-css.el...done
+   Generating autoloads for ob-ditaa.el...
+   Generating autoloads for ob-ditaa.el...done
+   Generating autoloads for ob-dot.el...
+   Generating autoloads for ob-dot.el...done
+   Generating autoloads for ob-emacs-lisp.el...
+   Generating autoloads for ob-emacs-lisp.el...done
+   Generating autoloads for ob-eval.el...
+   Generating autoloads for ob-eval.el...done
+   Generating autoloads for ob-exp.el...
+   Generating autoloads for ob-exp.el...done
+   Generating autoloads for ob-fortran.el...
+   Generating autoloads for ob-fortran.el...done
+   Generating autoloads for ob-gnuplot.el...
+   Generating autoloads for ob-gnuplot.el...done
+   Generating autoloads for ob-haskell.el...
+   Generating autoloads for ob-haskell.el...done
+   Generating autoloads for ob-io.el...
+   Generating autoloads for ob-io.el...done
+   Generating autoloads for ob-java.el...
+   Generating autoloads for ob-java.el...done
+   Generating autoloads for ob-js.el...
+   Generating autoloads for ob-js.el...done
+   Generating autoloads for ob-keys.el...
+   Generating autoloads for ob-keys.el...done
+   Generating autoloads for ob-latex.el...
+   Generating autoloads for ob-latex.el...done
+   Generating autoloads for ob-ledger.el...
+   Generating autoloads for ob-ledger.el...done
+   Generating autoloads for ob-lilypond.el...
+   Generating autoloads for ob-lilypond.el...done
+   Generating autoloads for ob-lisp.el...
+   Generating autoloads for ob-lisp.el...done
+   Generating autoloads for ob-lob.el...
+   Generating autoloads for ob-lob.el...done
+   Generating autoloads for ob-makefile.el...
+   Generating autoloads for ob-makefile.el...done
+   Generating autoloads for ob-matlab.el...
+   Generating autoloads for ob-matlab.el...done
+   Generating autoloads for ob-maxima.el...
+   Generating autoloads for ob-maxima.el...done
+   Generating autoloads for ob-mscgen.el...
+   Generating autoloads for ob-mscgen.el...done
+   Generating autoloads for ob-ocaml.el...
+   Generating autoloads for ob-ocaml.el...done
+   Generating autoloads for ob-octave.el...
+   Generating autoloads for ob-octave.el...done
+   Generating autoloads for ob-org.el...
+   Generating autoloads for ob-org.el...done
+   Generating autoloads for ob-perl.el...
+   Generating autoloads for ob-perl.el...done
+   Generating autoloads for ob-picolisp.el...
+   Generating autoloads for ob-picolisp.el...done
+   Generating autoloads for ob-plantuml.el...
+   Generating autoloads for ob-plantuml.el...done
+   Generating autoloads for ob-python.el...
+   Generating autoloads for ob-python.el...done
+   Generating autoloads for ob-ref.el...
+   Generating autoloads for ob-ref.el...done
+   Generating autoloads for ob-ruby.el...
+   Generating autoloads for ob-ruby.el...done
+   Generating autoloads for ob-sass.el...
+   Generating autoloads for ob-sass.el...done
+   Generating autoloads for ob-scala.el...
+   Generating autoloads for ob-scala.el...done
+   Generating autoloads for ob-scheme.el...
+   Generating autoloads for ob-scheme.el...done
+   Generating autoloads for ob-screen.el...
+   Generating autoloads for ob-screen.el...done
+   Generating autoloads for ob-sh.el...
+   Generating autoloads for ob-sh.el...done
+   Generating autoloads for ob-shen.el...
+   Generating autoloads for ob-shen.el...done
+   Generating autoloads for ob-sql.el...
+   Generating autoloads for ob-sql.el...done
+   Generating autoloads for ob-sqlite.el...
+   Generating autoloads for ob-sqlite.el...done
+   Generating autoloads for ob-table.el...
+   Generating autoloads for ob-table.el...done
+   Generating autoloads for ob-tangle.el...
+   Generating autoloads for ob-tangle.el...done
+   Generating autoloads for ob.el...
+   Generating autoloads for ob.el...done
+   Generating autoloads for org-agenda.el...
+   Generating autoloads for org-agenda.el...done
+   Generating autoloads for org-archive.el...
+   Generating autoloads for org-archive.el...done
+   Generating autoloads for org-attach.el...
+   Generating autoloads for org-attach.el...done
+   Generating autoloads for org-bbdb.el...
+   Generating autoloads for org-bbdb.el...done
+   Generating autoloads for org-bibtex.el...
+   Generating autoloads for org-bibtex.el...done
+   Generating autoloads for org-capture.el...
+   Generating autoloads for org-capture.el...done
+   Generating autoloads for org-clock.el...
+   Generating autoloads for org-clock.el...done
+   Generating autoloads for org-colview.el...
+   Generating autoloads for org-colview.el...done
+   Generating autoloads for org-compat.el...
+   Generating autoloads for org-compat.el...done
+   Generating autoloads for org-crypt.el...
+   Generating autoloads for org-crypt.el...done
+   Generating autoloads for org-ctags.el...
+   Generating autoloads for org-ctags.el...done
+   Generating autoloads for org-datetree.el...
+   Generating autoloads for org-datetree.el...done
+   Generating autoloads for org-docview.el...
+   Generating autoloads for org-docview.el...done
+   Generating autoloads for org-element.el...
+   Generating autoloads for org-element.el...done
+   Generating autoloads for org-entities.el...
+   Generating autoloads for org-entities.el...done
+   Generating autoloads for org-eshell.el...
+   Generating autoloads for org-eshell.el...done
+   Generating autoloads for org-faces.el...
+   Generating autoloads for org-faces.el...done
+   Generating autoloads for org-feed.el...
+   Generating autoloads for org-feed.el...done
+   Generating autoloads for org-footnote.el...
+   Generating autoloads for org-footnote.el...done
+   Generating autoloads for org-gnus.el...
+   Generating autoloads for org-gnus.el...done
+   Generating autoloads for org-habit.el...
+   Generating autoloads for org-habit.el...done
+   Generating autoloads for org-id.el...
+   Generating autoloads for org-id.el...done
+   Generating autoloads for org-indent.el...
+   Generating autoloads for org-indent.el...done
+   Generating autoloads for org-info.el...
+   Generating autoloads for org-info.el...done
+   Generating autoloads for org-inlinetask.el...
+   Generating autoloads for org-inlinetask.el...done
+   Generating autoloads for org-install.el...
+   Generating autoloads for org-install.el...done
+   Generating autoloads for org-irc.el...
+   Generating autoloads for org-irc.el...done
+   Generating autoloads for org-list.el...
+   Generating autoloads for org-list.el...done
+   Generating autoloads for org-macro.el...
+   Generating autoloads for org-macro.el...done
+   Generating autoloads for org-macs.el...
+   Generating autoloads for org-macs.el...done
+   Generating autoloads for org-mhe.el...
+   Generating autoloads for org-mhe.el...done
+   Generating autoloads for org-mobile.el...
+   Generating autoloads for org-mobile.el...done
+   Generating autoloads for org-mouse.el...
+   Generating autoloads for org-mouse.el...done
+   Generating autoloads for org-pcomplete.el...
+   Generating autoloads for org-pcomplete.el...done
+   Generating autoloads for org-plot.el...
+   Generating autoloads for org-plot.el...done
+   Generating autoloads for org-protocol.el...
+   Generating autoloads for org-protocol.el...done
+   Generating autoloads for org-rmail.el...
+   Generating autoloads for org-rmail.el...done
+   Generating autoloads for org-src.el...
+   Generating autoloads for org-src.el...done
+   Generating autoloads for org-table.el...
+   Generating autoloads for org-table.el...done
+   Generating autoloads for org-timer.el...
+   Generating autoloads for org-timer.el...done
+   Generating autoloads for org-version.el...
+   Generating autoloads for org-version.el...done
+   Generating autoloads for org-w3m.el...
+   Generating autoloads for org-w3m.el...done
+   Generating autoloads for org.el...
+   Generating autoloads for org.el...done
+   Generating autoloads for ox-ascii.el...
+   Generating autoloads for ox-ascii.el...done
+   Generating autoloads for ox-beamer.el...
+   Generating autoloads for ox-beamer.el...done
+   Generating autoloads for ox-bibtex.el...
+   Generating autoloads for ox-bibtex.el...done
+   Generating autoloads for ox-html.el...
+   Generating autoloads for ox-html.el...done
+   Generating autoloads for ox-icalendar.el...
+   Generating autoloads for ox-icalendar.el...done
+   Generating autoloads for ox-latex.el...
+   Generating autoloads for ox-latex.el...done
+   Generating autoloads for ox-man.el...
+   Generating autoloads for ox-man.el...done
+   Generating autoloads for ox-md.el...
+   Generating autoloads for ox-md.el...done
+   Generating autoloads for ox-odt.el...
+   Generating autoloads for ox-odt.el...done
+   Generating autoloads for ox-org.el...
+   Generating autoloads for ox-org.el...done
+   Generating autoloads for ox-publish.el...
+   Generating autoloads for ox-publish.el...done
+   Generating autoloads for ox-texinfo.el...
+   Generating autoloads for ox-texinfo.el...done
+   Generating autoloads for ox.el...
+   Generating autoloads for ox.el...done
+   Saving file /home/gmj/src/org-mode/lisp/org-loaddefs.el...
+   Wrote /home/gmj/src/org-mode/lisp/org-loaddefs.el
+   make[1]: Leaving directory `/home/gmj/src/org-mode/lisp'
+#+end_example
+
+** DONE Make sure we are using the correct version
+   Add this to your emacs setup (~/.emacs or ~/emacs.d/init.el)
+
+   #+BEGIN_EXAMPLE emacs-lisp
+   (add-to-list 'load-path "~/src/org-mode/lisp/")
+   (add-to-list 'load-path "~/src/org-mode/contrib/lisp/" t)
+   #+END_EXAMPLE
+* DONE Run a few tests
+** Do we have the new Org Version?
+   #+BEGIN_SRC elisp :exports both
+   (org-version)
+   #+END_SRC
+
+   #+RESULTS:
+   : 8.0.2
+
+** DONE Export to ASCII
+     Export current buffer to ASCII and open in other window
+     #+BEGIN_EXAMPLE
+     CTRL-C CTRL-E t A
+     #+END_EXAMPLE
+** DONE Export to HTML
+     Export current buffer to HTML and open in browser.
+     #+BEGIN_EXAMPLE
+     CTRL-C CTRL-E h o
+     #+END_EXAMPLE
+     
+* DONE Export to pdf via LaTeX
+  Now we get a little crazy.  Export to pdf via LaTeX.
+
+** DONE Install necessary packages
+  First, we'll have to install some stuff.  I'm testing this on a an
+  Ubuntu Linux system (12.04 Security Onion distro), so your mileage
+  may vary if your on some other platform (Mac, Red-Hat, etc)
+
+  #+BEGIN_SRC sh :exports code :results output
+  set -x -u
+  date
+
+  #
+  # Pay no attention to the man behind the curtain.
+  #
+  # this goo is needed to prompt for a sudo password
+  # while executing a sudo(1) command in bash under org-babel.
+  echo -e "#! /bin/bash\n/usr/bin/gksudo -p -m Password" > /tmp/gksudo-stdout
+  chmod +x /tmp/gksudo-stdout
+  SUDO_ASKPASS="/tmp/gksudo-stdout" sudo -A -s
+  #
+  # Thanks to Sylvain Rousseau: http://comments.gmane.org/gmane.emacs.orgmode/52979
+  #
+  # As you were.  That's over.  Now just do what you need to with sudo.
+  #
+
+  sudo id # just to make sure
+
+  sudo apt-get -y install texlive 2>&1
+  sudo apt-get -y install texlive-latex-extra 2>&1
+  sudo apt-get -y install texlive-bibtex-extra 2>&1
+  sudo apt-get -y install bibtex2html 2>&1
+  sudo apt-get -y install texlive-plain-extra 2>&1
+  sudo apt-get -y install xpdf 2>&1
+  #+END_SRC
+
+  #+RESULTS:
+  #+begin_example
+  Sat May 11 14:41:35 UTC 2013
+  uid=0(root) gid=0(root) groups=0(root)
+  Reading package lists...
+  Building dependency tree...
+  Reading state information...
+  texlive is already the newest version.
+  The following packages were automatically installed and are no longer required:
+    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
+    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
+    libjson-glib-1.0-0 gir1.2-xkl-1.0
+  Use 'apt-get autoremove' to remove them.
+  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+  Reading package lists...
+  Building dependency tree...
+  Reading state information...
+  texlive-latex-extra is already the newest version.
+  The following packages were automatically installed and are no longer required:
+    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
+    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
+    libjson-glib-1.0-0 gir1.2-xkl-1.0
+  Use 'apt-get autoremove' to remove them.
+  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+  Reading package lists...
+  Building dependency tree...
+  Reading state information...
+  texlive-bibtex-extra is already the newest version.
+  The following packages were automatically installed and are no longer required:
+    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
+    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
+    libjson-glib-1.0-0 gir1.2-xkl-1.0
+  Use 'apt-get autoremove' to remove them.
+  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+  Reading package lists...
+  Building dependency tree...
+  Reading state information...
+  bibtex2html is already the newest version.
+  The following packages were automatically installed and are no longer required:
+    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
+    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
+    libjson-glib-1.0-0 gir1.2-xkl-1.0
+  Use 'apt-get autoremove' to remove them.
+  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+  Reading package lists...
+  Building dependency tree...
+  Reading state information...
+  texlive-plain-extra is already the newest version.
+  The following packages were automatically installed and are no longer required:
+    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
+    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
+    libjson-glib-1.0-0 gir1.2-xkl-1.0
+  Use 'apt-get autoremove' to remove them.
+  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+  Reading package lists...
+  Building dependency tree...
+  Reading state information...
+  The following packages were automatically installed and are no longer required:
+    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
+    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
+    libjson-glib-1.0-0 gir1.2-xkl-1.0
+  Use 'apt-get autoremove' to remove them.
+  The following extra packages will be installed:
+    gsfonts-x11 lesstif2
+  The following NEW packages will be installed:
+    gsfonts-x11 lesstif2 xpdf
+  0 upgraded, 3 newly installed, 0 to remove and 0 not upgraded.
+  Need to get 842 kB of archives.
+  After this operation, 2,392 kB of additional disk space will be used.
+  Get:1 http://us.archive.ubuntu.com/ubuntu/ precise/main gsfonts-x11 all 0.22 [9,108 B]
+  Get:2 http://us.archive.ubuntu.com/ubuntu/ precise/universe lesstif2 amd64 1:0.95.2-1 [700 kB]
+  Get:3 http://us.archive.ubuntu.com/ubuntu/ precise/universe xpdf amd64 3.02-21build1 [133 kB]
+  Fetched 842 kB in 0s (1,028 kB/s)
+  Selecting previously unselected package gsfonts-x11.
+  (Reading database ... 296305 files and directories currently installed.)
+  Unpacking gsfonts-x11 (from .../gsfonts-x11_0.22_all.deb) ...
+  Selecting previously unselected package lesstif2.
+  Unpacking lesstif2 (from .../lesstif2_1%3a0.95.2-1_amd64.deb) ...
+  Selecting previously unselected package xpdf.
+  Unpacking xpdf (from .../xpdf_3.02-21build1_amd64.deb) ...
+  Processing triggers for fontconfig ...
+  Processing triggers for man-db ...
+  Processing triggers for desktop-file-utils ...
+  Setting up gsfonts-x11 (0.22) ...
+  Setting up lesstif2 (1:0.95.2-1) ...
+  Setting up xpdf (3.02-21build1) ...
+  Processing triggers for libc-bin ...
+  ldconfig deferred processing now taking place
+#+end_example
+  
+* DONE Export this document to pdf
+** DONE Export to PDF
+     Export current buffer to PDF and open
+     #+BEGIN_EXAMPLE
+     CTRL-C CTRL-E l o
+     #+END_EXAMPLE
+** If at first you don't succeed
+   Check the =*Messages*= buffer for errors.  You might have to run
+   pdflatex on the resulting tex file by hand to diagnose errors.
+   Most likely problems are missing fonts or styles requiring more packages.
+** open the pdf file
+   #+BEGIN_EXAMPLE
+   CTRL-C CTRL-E l o
+   #+END_EXAMPLE
+   should have opened the pdf file, but maybe I have
+   something configured wrong, so we open in emacs directly with 
+   #+BEGIN_EXAMPLE
+   CTRL-X CTRL-F
+   #+END_EXAMPLE
+# * Add citations to LaTeX version
+#  If you're wondering about all this embedded code stuff, see \cite{schulte2012multi}
+# * Add citations to HTML version
+* Open Issues
+** Things not quite working in the new exporter  
+*** TODO Get citations and bibliography working in HTML and LaTeX
+   - Old exporter had org-exp-bibtex in contrib
+   - New exporter will have ox-bibtex.el
+     + port by Nicolas Goaziou 
+     + I've done some testing.  LaTeX works.  HTML has a few issues.
+** Thing I might not understand in the new exporter
+*** TODO Understand what happened to #+TEXT in the new exporter?
+   How do you specify text that is to be before the first section?
+*** TODO Understand the template categories for export ?
+   I want to insert a default set of headers, I typed
+   #+BEGIN_EXAMPLE
+   CTRL-C CTRL-E #
+   #+END_EXAMPLE
+   and it asks me for a "Options Category?"  What's that?  "?" does not list options.
+*** TODO Understand why PDF file links not opening the file
+* Feedback
+** Send me suggestions
+   If you send me suggestions, I may incorporate them in future versions.   
+** Hack the source directly on github
+   Alternately, you can hack the .org source directly.  The source to
+   this document is available on github under https://github.com/eludom/HOWTO
+# * Bibliography
+# #+BIBLIOGRAPHY: refs alpha option:-d limit:t
+
+
