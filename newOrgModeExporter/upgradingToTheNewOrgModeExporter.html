@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Upgrading to the new Emacs org-mode exporter</title>
-<!-- 2013-05-11 Sat 18:24 -->
+<!-- 2013-06-29 Sat 08:47 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 
@@ -310,18 +310,17 @@ CTRL-C CTRL-E h o
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-sec-5" class="outline-2">
-<h2 id="sec-5"><span class="section-number-2">5</span> <span class="done DONE">DONE</span> Export to pdf via LaTeX</h2>
-<div class="outline-text-2" id="text-5">
+<div id="outline-container-sec-4-4" class="outline-3">
+<h3 id="sec-4-4"><span class="section-number-3">4.4</span> <span class="done DONE">DONE</span> Export to pdf via LaTeX</h3>
+<div class="outline-text-3" id="text-4-4">
 <p>
 Now we get a little crazy.  Export to pdf via LaTeX.
 </p>
 </div>
 
-<div id="outline-container-sec-5-1" class="outline-3">
-<h3 id="sec-5-1"><span class="section-number-3">5.1</span> <span class="done DONE">DONE</span> Install necessary packages</h3>
-<div class="outline-text-3" id="text-5-1">
+<div id="outline-container-sec-4-4-1" class="outline-4">
+<h4 id="sec-4-4-1"><span class="section-number-4">4.4.1</span> <span class="done DONE">DONE</span> Install necessary packages</h4>
+<div class="outline-text-4" id="text-4-4-1">
 <p>
 First, we'll have to install some stuff.  I'm testing this on a an
 Ubuntu Linux system (12.04 Security Onion distro), so your mileage
@@ -359,13 +358,10 @@ sudo apt-get -y install xpdf 2&gt;&amp;1
 </div>
 </div>
 </div>
-</div>
-<div id="outline-container-sec-6" class="outline-2">
-<h2 id="sec-6"><span class="section-number-2">6</span> <span class="done DONE">DONE</span> Export this document to pdf</h2>
-<div class="outline-text-2" id="text-6">
-</div><div id="outline-container-sec-6-1" class="outline-3">
-<h3 id="sec-6-1"><span class="section-number-3">6.1</span> <span class="done DONE">DONE</span> Export to PDF</h3>
-<div class="outline-text-3" id="text-6-1">
+
+<div id="outline-container-sec-4-4-2" class="outline-4">
+<h4 id="sec-4-4-2"><span class="section-number-4">4.4.2</span> <span class="done DONE">DONE</span> Export to PDF</h4>
+<div class="outline-text-4" id="text-4-4-2">
 <p>
 Export current buffer to PDF and open
 </p>
@@ -374,10 +370,11 @@ CTRL-C CTRL-E l o
 </pre>
 </div>
 </div>
+</div>
 
-<div id="outline-container-sec-6-2" class="outline-3">
-<h3 id="sec-6-2"><span class="section-number-3">6.2</span> If at first you don't succeed</h3>
-<div class="outline-text-3" id="text-6-2">
+<div id="outline-container-sec-4-5" class="outline-3">
+<h3 id="sec-4-5"><span class="section-number-3">4.5</span> If at first you don't succeed</h3>
+<div class="outline-text-3" id="text-4-5">
 <p>
 Check the <code>*Messages*</code> buffer for errors.  You might have to run
 pdflatex on the resulting tex file by hand to diagnose errors.
@@ -386,9 +383,34 @@ Most likely problems are missing fonts or styles requiring more packages.
 </div>
 </div>
 
-<div id="outline-container-sec-6-3" class="outline-3">
-<h3 id="sec-6-3"><span class="section-number-3">6.3</span> open the pdf file</h3>
-<div class="outline-text-3" id="text-6-3">
+<div id="outline-container-sec-4-6" class="outline-3">
+<h3 id="sec-4-6"><span class="section-number-3">4.6</span> pdf in texlive on OSx needs ulem.sty</h3>
+<div class="outline-text-3" id="text-4-6">
+<p>
+I had to do the following
+</p>
+
+<dl class="org-dl">
+<dt> download ulem.sty </dt><dd><a href="http://ctan.mackichan.com/macros/plain/contrib/misc/ulem.sty">http://ctan.mackichan.com/macros/plain/contrib/misc/ulem.sty</a> to ~/
+</dd>
+<dt> figure out tex style install path </dt><dd>ran pdflatex, look at messsages fo find location of texbase.
+See <a href="http://stackoverflow.com/questions/1390828/how-do-i-install-a-latex-sty-file-on-osx">http://stackoverflow.com/questions/1390828/how-do-i-install-a-latex-sty-file-on-osx</a>
+</dd>
+</dl>
+
+<pre class="example">
+opt/local/share/texmf-texlive-dist/tex/latex/base/
+sudo cp ~/ulem.sty .
+sudo texhash
+cd [wherever foo.tex is]
+pdflatex foo
+</pre>
+</div>
+</div>
+
+<div id="outline-container-sec-4-7" class="outline-3">
+<h3 id="sec-4-7"><span class="section-number-3">4.7</span> open the pdf file</h3>
+<div class="outline-text-3" id="text-4-7">
 <pre class="example">
 CTRL-C CTRL-E l o
 </pre>
@@ -403,15 +425,15 @@ CTRL-X CTRL-F
 </div>
 </div>
 
-<div id="outline-container-sec-7" class="outline-2">
-<h2 id="sec-7"><span class="section-number-2">7</span> Open Issues</h2>
-<div class="outline-text-2" id="text-7">
-</div><div id="outline-container-sec-7-1" class="outline-3">
-<h3 id="sec-7-1"><span class="section-number-3">7.1</span> Things not quite working in the new exporter</h3>
-<div class="outline-text-3" id="text-7-1">
-</div><div id="outline-container-sec-7-1-1" class="outline-4">
-<h4 id="sec-7-1-1"><span class="section-number-4">7.1.1</span> <span class="todo TODO">TODO</span> Get citations and bibliography working in HTML and LaTeX</h4>
-<div class="outline-text-4" id="text-7-1-1">
+<div id="outline-container-sec-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Open Issues</h2>
+<div class="outline-text-2" id="text-5">
+</div><div id="outline-container-sec-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> Things not quite working in the new exporter</h3>
+<div class="outline-text-3" id="text-5-1">
+</div><div id="outline-container-sec-5-1-1" class="outline-4">
+<h4 id="sec-5-1-1"><span class="section-number-4">5.1.1</span> <span class="todo TODO">TODO</span> Get citations and bibliography working in HTML and LaTeX</h4>
+<div class="outline-text-4" id="text-5-1-1">
 <ul class="org-ul">
 <li>Old exporter had org-exp-bibtex in contrib
 </li>
@@ -428,21 +450,21 @@ CTRL-X CTRL-F
 </div>
 </div>
 
-<div id="outline-container-sec-7-2" class="outline-3">
-<h3 id="sec-7-2"><span class="section-number-3">7.2</span> Thing I might not understand in the new exporter</h3>
-<div class="outline-text-3" id="text-7-2">
-</div><div id="outline-container-sec-7-2-1" class="outline-4">
-<h4 id="sec-7-2-1"><span class="section-number-4">7.2.1</span> <span class="todo TODO">TODO</span> Understand what happened to #+TEXT in the new exporter?</h4>
-<div class="outline-text-4" id="text-7-2-1">
+<div id="outline-container-sec-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> Thing I might not understand in the new exporter</h3>
+<div class="outline-text-3" id="text-5-2">
+</div><div id="outline-container-sec-5-2-1" class="outline-4">
+<h4 id="sec-5-2-1"><span class="section-number-4">5.2.1</span> <span class="todo TODO">TODO</span> Understand what happened to #+TEXT in the new exporter?</h4>
+<div class="outline-text-4" id="text-5-2-1">
 <p>
 How do you specify text that is to be before the first section?
 </p>
 </div>
 </div>
 
-<div id="outline-container-sec-7-2-2" class="outline-4">
-<h4 id="sec-7-2-2"><span class="section-number-4">7.2.2</span> <span class="todo TODO">TODO</span> Understand the template categories for export ?</h4>
-<div class="outline-text-4" id="text-7-2-2">
+<div id="outline-container-sec-5-2-2" class="outline-4">
+<h4 id="sec-5-2-2"><span class="section-number-4">5.2.2</span> <span class="todo TODO">TODO</span> Understand the template categories for export ?</h4>
+<div class="outline-text-4" id="text-5-2-2">
 <p>
 I want to insert a default set of headers, I typed
 </p>
@@ -455,27 +477,27 @@ and it asks me for a "Options Category?"  What's that?  "?" does not list option
 </div>
 </div>
 
-<div id="outline-container-sec-7-2-3" class="outline-4">
-<h4 id="sec-7-2-3"><span class="section-number-4">7.2.3</span> <span class="todo TODO">TODO</span> Understand why PDF file links not opening the file</h4>
+<div id="outline-container-sec-5-2-3" class="outline-4">
+<h4 id="sec-5-2-3"><span class="section-number-4">5.2.3</span> <span class="todo TODO">TODO</span> Understand why PDF file links not opening the file</h4>
 </div>
 </div>
 </div>
 
-<div id="outline-container-sec-8" class="outline-2">
-<h2 id="sec-8"><span class="section-number-2">8</span> Feedback</h2>
-<div class="outline-text-2" id="text-8">
-</div><div id="outline-container-sec-8-1" class="outline-3">
-<h3 id="sec-8-1"><span class="section-number-3">8.1</span> Send me suggestions</h3>
-<div class="outline-text-3" id="text-8-1">
+<div id="outline-container-sec-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Feedback</h2>
+<div class="outline-text-2" id="text-6">
+</div><div id="outline-container-sec-6-1" class="outline-3">
+<h3 id="sec-6-1"><span class="section-number-3">6.1</span> Send me suggestions</h3>
+<div class="outline-text-3" id="text-6-1">
 <p>
 If you send me suggestions, I may incorporate them in future versions.   
 </p>
 </div>
 </div>
 
-<div id="outline-container-sec-8-2" class="outline-3">
-<h3 id="sec-8-2"><span class="section-number-3">8.2</span> Hack the source directly on github</h3>
-<div class="outline-text-3" id="text-8-2">
+<div id="outline-container-sec-6-2" class="outline-3">
+<h3 id="sec-6-2"><span class="section-number-3">6.2</span> Hack the source directly on github</h3>
+<div class="outline-text-3" id="text-6-2">
 <p>
 Alternately, you can hack the .org source directly.  The source to
 this document is available on github under <a href="https://github.com/eludom/HOWTO">https://github.com/eludom/HOWTO</a>
@@ -483,12 +505,26 @@ this document is available on github under <a href="https://github.com/eludom/HO
 </div>
 </div>
 </div>
+
+<div id="outline-container-sec-7" class="outline-2">
+<h2 id="sec-7"><span class="section-number-2">7</span> For future reading</h2>
+<div class="outline-text-2" id="text-7">
+<dl class="org-dl">
+<dt> original announcment of new exporter </dt><dd>       <a href="http://article.gmane.org/gmane.emacs.orgmode/65574">http://article.gmane.org/gmane.emacs.orgmode/65574</a>
+</dd>
+<dt> new exporter overview </dt><dd>       <a href="http://orgmode.org/worg/exporters/ox-overview.html">http://orgmode.org/worg/exporters/ox-overview.html</a>
+</dd>
+<dt> 8.0 upgrade guide </dt><dd><a href="http://orgmode.org/worg/org-8.0.html">http://orgmode.org/worg/org-8.0.html</a>
+</dd>
+</dl>
+</div>
+</div>
 </div>
 <div id="postamble" class="status">
 <p class="date">Date: 2013-05-10 Fri</p>
 <p class="author">Author: George Jones &lt;gmj AT pobox DOT com&gt;, and "eludom" most other places.</p>
-<p class="date">Created: 2013-05-11 Sat 18:24</p>
-<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.50.1 (<a href="http://orgmode.org">Org</a> mode 8.0.2)</p>
+<p class="date">Created: 2013-06-29 Sat 08:47</p>
+<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.1 (<a href="http://orgmode.org">Org</a> mode 8.0.3)</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

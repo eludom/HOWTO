@@ -380,10 +380,10 @@
      CTRL-C CTRL-E h o
      #+END_EXAMPLE
      
-* DONE Export to pdf via LaTeX
+** DONE Export to pdf via LaTeX
   Now we get a little crazy.  Export to pdf via LaTeX.
 
-** DONE Install necessary packages
+*** DONE Install necessary packages
   First, we'll have to install some stuff.  I'm testing this on a an
   Ubuntu Linux system (12.04 Security Onion distro), so your mileage
   may vary if your on some other platform (Mac, Red-Hat, etc)
@@ -415,99 +415,9 @@
   sudo apt-get -y install texlive-plain-extra 2>&1
   sudo apt-get -y install xpdf 2>&1
   #+END_SRC
-
-  #+RESULTS:
-  #+begin_example
-  Sat May 11 14:41:35 UTC 2013
-  uid=0(root) gid=0(root) groups=0(root)
-  Reading package lists...
-  Building dependency tree...
-  Reading state information...
-  texlive is already the newest version.
-  The following packages were automatically installed and are no longer required:
-    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
-    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
-    libjson-glib-1.0-0 gir1.2-xkl-1.0
-  Use 'apt-get autoremove' to remove them.
-  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
-  Reading package lists...
-  Building dependency tree...
-  Reading state information...
-  texlive-latex-extra is already the newest version.
-  The following packages were automatically installed and are no longer required:
-    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
-    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
-    libjson-glib-1.0-0 gir1.2-xkl-1.0
-  Use 'apt-get autoremove' to remove them.
-  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
-  Reading package lists...
-  Building dependency tree...
-  Reading state information...
-  texlive-bibtex-extra is already the newest version.
-  The following packages were automatically installed and are no longer required:
-    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
-    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
-    libjson-glib-1.0-0 gir1.2-xkl-1.0
-  Use 'apt-get autoremove' to remove them.
-  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
-  Reading package lists...
-  Building dependency tree...
-  Reading state information...
-  bibtex2html is already the newest version.
-  The following packages were automatically installed and are no longer required:
-    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
-    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
-    libjson-glib-1.0-0 gir1.2-xkl-1.0
-  Use 'apt-get autoremove' to remove them.
-  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
-  Reading package lists...
-  Building dependency tree...
-  Reading state information...
-  texlive-plain-extra is already the newest version.
-  The following packages were automatically installed and are no longer required:
-    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
-    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
-    libjson-glib-1.0-0 gir1.2-xkl-1.0
-  Use 'apt-get autoremove' to remove them.
-  0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
-  Reading package lists...
-  Building dependency tree...
-  Reading state information...
-  The following packages were automatically installed and are no longer required:
-    gir1.2-timezonemap-1.0 gir1.2-gstreamer-0.10 libtimezonemap1
-    linux-headers-3.2.0-35 gir1.2-json-1.0 linux-headers-3.2.0-35-generic
-    libjson-glib-1.0-0 gir1.2-xkl-1.0
-  Use 'apt-get autoremove' to remove them.
-  The following extra packages will be installed:
-    gsfonts-x11 lesstif2
-  The following NEW packages will be installed:
-    gsfonts-x11 lesstif2 xpdf
-  0 upgraded, 3 newly installed, 0 to remove and 0 not upgraded.
-  Need to get 842 kB of archives.
-  After this operation, 2,392 kB of additional disk space will be used.
-  Get:1 http://us.archive.ubuntu.com/ubuntu/ precise/main gsfonts-x11 all 0.22 [9,108 B]
-  Get:2 http://us.archive.ubuntu.com/ubuntu/ precise/universe lesstif2 amd64 1:0.95.2-1 [700 kB]
-  Get:3 http://us.archive.ubuntu.com/ubuntu/ precise/universe xpdf amd64 3.02-21build1 [133 kB]
-  Fetched 842 kB in 0s (1,028 kB/s)
-  Selecting previously unselected package gsfonts-x11.
-  (Reading database ... 296305 files and directories currently installed.)
-  Unpacking gsfonts-x11 (from .../gsfonts-x11_0.22_all.deb) ...
-  Selecting previously unselected package lesstif2.
-  Unpacking lesstif2 (from .../lesstif2_1%3a0.95.2-1_amd64.deb) ...
-  Selecting previously unselected package xpdf.
-  Unpacking xpdf (from .../xpdf_3.02-21build1_amd64.deb) ...
-  Processing triggers for fontconfig ...
-  Processing triggers for man-db ...
-  Processing triggers for desktop-file-utils ...
-  Setting up gsfonts-x11 (0.22) ...
-  Setting up lesstif2 (1:0.95.2-1) ...
-  Setting up xpdf (3.02-21build1) ...
-  Processing triggers for libc-bin ...
-  ldconfig deferred processing now taking place
-#+end_example
   
-* DONE Export this document to pdf
-** DONE Export to PDF
+
+*** DONE Export to PDF
      Export current buffer to PDF and open
      #+BEGIN_EXAMPLE
      CTRL-C CTRL-E l o
@@ -516,6 +426,22 @@
    Check the =*Messages*= buffer for errors.  You might have to run
    pdflatex on the resulting tex file by hand to diagnose errors.
    Most likely problems are missing fonts or styles requiring more packages.
+** pdf in texlive on OSx needs ulem.sty
+   I had to do the following
+
+   - download ulem.sty :: http://ctan.mackichan.com/macros/plain/contrib/misc/ulem.sty to ~/
+   - figure out tex style install path :: ran pdflatex, look at messsages fo find location of texbase.
+     See http://stackoverflow.com/questions/1390828/how-do-i-install-a-latex-sty-file-on-osx
+
+#+BEGIN_EXAMPLE
+   opt/local/share/texmf-texlive-dist/tex/latex/base/
+   sudo cp ~/ulem.sty .
+   sudo texhash
+   cd [wherever foo.tex is]
+   pdflatex foo
+#+END_EXAMPLE
+
+
 ** open the pdf file
    #+BEGIN_EXAMPLE
    CTRL-C CTRL-E l o
@@ -555,3 +481,9 @@
 # #+BIBLIOGRAPHY: refs alpha option:-d limit:t
 
 
+* For future reading
+  - original announcment of new exporter ::
+       http://article.gmane.org/gmane.emacs.orgmode/65574
+  - new exporter overview ::
+       http://orgmode.org/worg/exporters/ox-overview.html
+  - 8.0 upgrade guide :: http://orgmode.org/worg/org-8.0.html
