@@ -1,11 +1,11 @@
-#+TITLE: pogoPlugConfig
+#+TITLE: Pogoplug configuration as an NFS server
 #+DATE: <2014-07-12 Sat>
 #+AUTHOR: George Jones
 #+EMAIL: gmj@pobox.com
 #+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
 #+OPTIONS: author:t c:nil creator:comment d:(not "LOGBOOK") date:t
 #+OPTIONS: e:t email:nil f:t inline:t num:t p:nil pri:nil stat:t
-#+OPTIONS: tags:t tasks:t tex:t timestamp:t toc:nil todo:t |:t
+#+OPTIONS: tags:t tasks:t tex:t timestamp:t toc:2 todo:t |:t
 #+CREATOR: Emacs 24.3.50.1 (Org mode 8.2.5h)
 #+DESCRIPTION:
 #+EXCLUDE_TAGS: noexport
@@ -13,7 +13,7 @@
 #+LANGUAGE: en
 #+SELECT_TAGS: export
 
-This is a log of the steps that I took to re-install arch linux on a
+This is a log of the steps that I took to install arch linux on a
 pogoplug 4 and set it up as a local storage device, export nfs and
 mount it.  This is done for myself as a record of what I've done
 because 1) I might have to repeat the process and 2) someone else
@@ -21,53 +21,47 @@ might find it useful.
 
 Start here: http://archlinuxarm.org/platforms/armv5/pogoplug-series-4
 
-* Install basic pogoplug
-    
-  - [X] Plug in pogoplug power
+* [0/8] Install basic pogoplug
+** TODO Plug in pogoplug power
+** TODO Plug in pogoplug to Internet connected port
+** TODO Go to pogoplug.com/activate
+** TODO Type in 26 digit/number ID on bottom of unit if needed.
+** TODO Enable SSH on the pogoplug web site.
+    See https://pogoplug.com/settings.
+    Herein lies the risk should pogoplug go belly up, decide they
+    don't want people rooting their devices anymore, etc.  
+** TODO Change the password
+** TODO Test SSH.
+   Get address assigned by DHCP from devices attached to local
+   router/WAP (in my case, http://192.168.1.1, login in as
+   appropriate and look at connected devices to find pogoplug)
+** TODO [optional] Assign a fixed address to the pogoplug.
+   I did this by adding a DNS reservation at a fixed address for the
+   MAC address of the Pogoplug. 
+* TODO Root the Pogoplug
+  See http://archlinuxarm.org/platforms/armv5/pogoplug-series-4.  I
+    used a USB thumb drive in the top USB slot (you have to remove the
+    cover)
+* TODO Reboot
+* TODO Attach storage
 
-  - [X] Plug in pogoplug to Internet connected port
+  I attached a 2 TB external USB drive to one of the USB ports which
+  is formatted with NTFS.  I chose to keep it rather than formatting
+  with ext4 so I can plug it in to other devices that understand NTFS.
 
-  - [X] Go to pogoplug.com/activate
-
-  - [X] Type in 26 digit/number ID on bottom of unit if needed.
-
-  - [X] Enable SSH on the pogoplug web site https://pogoplug.com/settings# if needed (settings/security)
-
-  - [X] Change the password
-
-  - [X] Test SSH.  Get address assigned by DHCP from devices attached
-    to local router/WAP (in my case, http://192.168.1.1, login in as
-    appropriate and look at connected devices to find pogoplug)
-
-  - [ ] [optional] Assign a fixed address to the pogoplug.  I did this
-    by adding a DNS reservation at a fixed address for the MAC address
-    of the Pogoplug. 
-
-* Root the Pogoplug
-  
-  - [X] http://archlinuxarm.org/platforms/armv5/pogoplug-series-4.  I
-    used a USB thumb drive in the top USB slot (you have to remove the cover)
-
-  - [X] Reboot
-
-* Attach storage
-
-  - I attached a 2 TB external USB drive to one of the USB ports which
-    is formatted with NTFS.  I chose to keep it rather than formatting.
-
-  - [X] install NTFS-3G to enable NTFS writing
+** TODO  install NTFS-3G to enable NTFS writing
     
     #+BEGIN_EXAMPLE
     [root@alarm ~]# pacman -S ntfs-3g
     #+END_EXAMPLE
     
-  - [X] Find the partition
+** TODO Find the partition
      
      #+BEGIN_EXAMPLE
      [root@alarm ~]# fdisk -l
      #+END_EXAMPLE
 
-  - [X] Mount the ntfs partition
+** TODO  Mount the ntfs partition
 
      #+BEGIN_EXAMPLE
      [root@alarm ~]# mount -t ntfs-3g /dev/sdb1 /mnt/data
@@ -90,12 +84,12 @@ Start here: http://archlinuxarm.org/platforms/armv5/pogoplug-series-4
      for more details.
      #+END_EXAMPLE
 
-     - [ ] fix NTFS filesystem problem
+** TODO fix NTFS filesystem problems
 
-     Given that I don't have a windows system to run chkdisk with, I'm
-     considering reformatting with ext4 or similar and moving on...but
-     some quick googling found an answer:
-     http://askubuntu.com/questions/47700/fix-corrupt-ntfs-partition-without-windows 
+    Given that I don't have a windows system to run chkdisk with, I'm
+    considering reformatting with ext4 or similar and moving on...but
+    some quick googling found an answer:
+    http://askubuntu.com/questions/47700/fix-corrupt-ntfs-partition-without-windows 
      
      
      #+BEGIN_EXAMPLE
@@ -110,9 +104,8 @@ Start here: http://archlinuxarm.org/platforms/armv5/pogoplug-series-4
      
      works just fine.
 
-* Set up permanent mount
-
-  - [X] Find the UUID
+* [0/3] Set up a permanent mount of the storage on the pogoplug
+** TODO Find the UUID
     
     #+BEGIN_EXAMPLE
     [root@alarm ~]# blkid /dev/sdb1
@@ -120,13 +113,13 @@ Start here: http://archlinuxarm.org/platforms/armv5/pogoplug-series-4
     /dev/sdb1: LABEL="Seagate Expansion Drive" UUID="54F8DF61F8DF3FC2" TYPE="ntfs" PARTUUID="ba02d2a2-01" 
     #+END_EXAMPLE
 
-  - [X] Add a user 
+** TODO Add a user 
     
     #+BEGIN_EXAMPLE
     useradd -m -g users -G wheel -s /bin/bash user
     #+END_EXAMPLE
     
-  - [X] create the fstab entry with linux compatible permissions allowing
+** TODO create the fstab entry with linux compatible permissions allowing
 
     #+BEGIN_EXAMPLE
     cat <<END >> /etc/fstab
@@ -135,7 +128,7 @@ Start here: http://archlinuxarm.org/platforms/armv5/pogoplug-series-4
     END
     #+END_EXAMPLE 
 
-* Install NTP
+* TODO Install NTP
 
   See
   https://wiki.archlinux.org/index.php/Network_Time_Protocol_daemon#Installation
@@ -148,34 +141,32 @@ Start here: http://archlinuxarm.org/platforms/armv5/pogoplug-series-4
   ntpq -p
   #+END_EXAMPLE
 
-* Install NFS
+* [0/7] TODO Install and Configure NFS
+
   See https://wiki.archlinux.org/index.php/NFS
 
+** TODO Install NFS Utilities
   #+BEGIN_EXAMPLE
   pacman -S nfs-utils
-  cat <<HERE > /etc/imapd.conf
-[General]
+  #+END_EXAMPLE
+** TODO Set up idmapd.conf
+  #+BEGIN_EXAMPLE
+  cat <<HERE > /etc/idmapd.conf
+  [General]
 
-Verbosity = 1
-Pipefs-Directory = /var/lib/nfs/rpc_pipefs
-Domain = atomic
+  Verbosity = 1
+  Pipefs-Directory = /var/lib/nfs/rpc_pipefs
+  Domain = atomic
+  
+  [Mapping]
 
-[Mapping]
-
-Nobody-User = nobody
-Nobody-Group = nobody
-[General]
- 
-Verbosity = 1
-Pipefs-Directory = /var/lib/nfs/rpc_pipefs
-Domain = atomic
-
-[Mapping]
-
-Nobody-User = nobody
-Nobody-Group = nobody
+  Nobody-User = nobody
+  Nobody-Group = nobody
+  [General]
 HERE
-
+  #+END_EXAMPLE
+** TODO Set up NFS options
+  #+BEGIN_EXAMPLE
   if [ ! -f /etc/conf.d/nfs-common.conf.orig ]; then
     cp /etc/conf.d/nfs-common.conf /etc/conf.d/nfs-common.conf.orig
   fi
@@ -188,8 +179,9 @@ HERE
   fi
 
   cat /etc/conf.d/nfs-server.conf.orig | sed -e 's/^MOUNTD_OPTS.*/MOUNTD_OPTS="-p 20048"/' > /etc/conf.d/nfs-server.conf
-
-
+  #+END_EXAMPLE
+** TODO (re)start the NFS server
+  #+BEGIN_EXAMPLE
   systemctl restart nfs-config
   systemctl stop rpc-statd
   systemctl start rpc-statd
@@ -197,8 +189,7 @@ HERE
   systemctl start nfs-server
   rpcinfo -p
   #+END_EXAMPLE
-    
-* Export the filesystem     
+** TODO Export the filesystem     
 
   #+BEGIN_EXAMPLE
 
@@ -212,15 +203,13 @@ HERE
   exportfs -rav
   
   #+END_EXAMPLE
-
-* Start NFS server (now and on reboot)
+** TODO Start NFS server on reboot
 
   #+BEGIN_EXAMPLE
   systemctl enable nfs-server.service
   systemctl start  nfs-server.service
   #+END_EXAMPLE
-
-* Open up firewall rules if needed
+** IN-PROGRESS Open up firewall rules if needed
 
   #+BEGIN_EXAMPLE
   if [ ! -f /etc/iptables/iptables.rules.orig ]; then
@@ -246,7 +235,10 @@ If using NFSv3 and the above listed static ports for rpc.statd and lockd these a
 HERE  
   #+END_EXAMPLE
 
-* Mount from the client by hand (assumes Ubuntu with packages installed)
+* [0/3] Client side NFS configuration
+** TODO Configure NTP on the client
+   Left as an exercise for the reader.  Your clients may vary.
+** TODO Mount from the client by hand (assumes Ubuntu with packages installed)
 
   #+BEGIN_EXAMPLE
   showmount -e 192.168.1.222
@@ -254,7 +246,7 @@ HERE
   df
   #+END_EXAMPLE
 
-* Set up mount from fstab
+** TODO Set up mount from fstab on boot
 
   #+BEGIN_EXAMPLE
 if [ ! -f /etc/fstab.orig ]; then
@@ -269,6 +261,8 @@ HERE
   #+END_EXAMPLE
 
 * Outstanding Problems
+  - None.
+
 
 
 
