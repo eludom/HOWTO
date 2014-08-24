@@ -1,7 +1,7 @@
 #+TITLE: Pogoplug configuration as an NFS server
 #+DATE: <2014-07-12 Sat>
 #+AUTHOR: George Jones
-#+EMAIL: gmj@pobox.com
+#+EMAIL: gmj AT pobox DOT com
 #+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
 #+OPTIONS: author:t c:nil creator:comment d:(not "LOGBOOK") date:t
 #+OPTIONS: e:t email:nil f:t inline:t num:t p:nil pri:nil stat:t
