@@ -3,7 +3,7 @@
 #+OPTIONS: e:t email:nil f:t inline:t num:t p:nil pri:nil prop:nil
 #+OPTIONS: stat:t tags:t tasks:t tex:t timestamp:t toc:nil todo:t |:t
 #+TITLE: Security Onion BitTorrent Instructions
-i#+DATE: <2014-02-23 Sun>
+#+DATE: <2014-02-23 Sun>
 #+AUTHOR: George Jones <gmj@pobox.com>
 #+EMAIL: gmj@pobox.com
 #+DESCRIPTION:
