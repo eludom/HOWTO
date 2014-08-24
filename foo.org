@@ -1,3 +1,19 @@
+* headers							   :noexport:
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:t c:nil creator:comment d:(not "LOGBOOK") date:t
+#+OPTIONS: e:t email:nil f:t inline:t num:t p:nil pri:nil prop:nil
+#+OPTIONS: stat:t tags:t tasks:t tex:t timestamp:t toc:nil todo:t |:t
+#+TITLE: Security Onion BitTorrent Instructions
+i#+DATE: <2014-02-23 Sun>
+#+AUTHOR: George Jones <gmj@pobox.com>
+#+EMAIL: gmj@pobox.com
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 24.3.50.1 (Org mode 8.2.5h)
+
 This documents the process of downloading the latest [[http://blog.securityonion.net/][Security Onion]]
 using BitTorrent, as well as the process of creating the .torrent
 file.
