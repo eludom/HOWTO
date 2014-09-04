@@ -6,7 +6,7 @@
 		________________________________________
 
 
-			    <2014-02-23 Sun>
+			      <2014-09-04>
 
 
 This documents the process of downloading the latest [Security Onion]
@@ -23,20 +23,19 @@ using BitTorrent, as well as the process of creating the .torrent file.
   client, do the following to download the latest version:
 
   - [ ] Click on the link
-    [http://port111.com/securityonion-12.04.4-20140222.iso.torrent]. This
+    [http://port111.com/securityonion-12.04.5-20140903.iso.torrent]. This
     will download the .torrent file (to `~/Downloads' by default)
   - [ ] Click on the .torrent file
   - [ ] When transmission comes up with the "Torrent options" window,
     select the .torrent file and click "Open".  The download will
     begin, in ~/Downloads by default
   - [ ] When done, verify the .md5
-    ,----
-    | $ wget http://downloads.sourceforge.net/project/security-onion/12.04.4/securityonion-12.04.4-20140222.iso.md5
-    | $ md5sum securityonion-12.04.4-20140222.iso
-    | 4107d6b6c469b27014da7ce26f249e5e  securityonion-12.04.4-20140222.iso
-    | $ cat securityonion-12.04.4-20140222.iso.md5
-    | 4107d6b6c469b27014da7ce26f249e5e  securityonion-12.04.4-20140222.iso
-    `----
+  ,----
+  | $ md5sum securityonion-12.04.5-20140903.iso
+  | MD5 (securityonion-12.04.5-20140903.iso) = bf8dc037ba20a0a559135d3db796fb48
+  | $ cat securityonion-12.04.5-20140903.iso.md5 
+  | bf8dc037ba20a0a559135d3db796fb48  securityonion-12.04.5-20140903.iso
+  `----
 
 
 2 How to create a .torrent file for Security Onion
@@ -45,7 +44,7 @@ using BitTorrent, as well as the process of creating the .torrent file.
 2.1 Download and verify the ISO
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-2.1.1 Go to the web page in a browser [http://sourceforge.net/projects/security-onion/files/12.04.4/]
+2.1.1 Go to the web page in a browser [http://sourceforge.net/projects/security-onion/files/12.04.5/]
 -----------------------------------------------------------------------------------------------------
 
 
@@ -55,26 +54,34 @@ using BitTorrent, as well as the process of creating the .torrent file.
   Start a download with wget. This will do a redirect.
 
   ,----
-  | $ wget http://downloads.sourceforge.net/project/security-onion/12.04.4/securityonion-12.04.4-20140222.iso
+  | wget http://downloads.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
   `----
 
   Grab the redirect URL. This is the real iso download URL.  It will be
   something like:
 
   ,----
-  | $ http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.4/securityonion-12.04.4-20140222.iso
+  | http://hivelocity.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
   `----
 
   Kill the first wget.  You might consider doing this a couple times to
   get multiple webseeds (downloads.sourceforge.net appears to be a round
   robin DNS rotation pointing at different mirror sites)
 
+  I did this and got:
+
+  ,----
+  | http://hivelocity.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
+  | http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
+  | http://iweb.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
+  `----
+
 
 2.1.3 Download the ISO
 ----------------------
 
   ,----
-  | $ wget http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.4/securityonion-12.04.4-20140222.iso
+  | wget http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
   `----
 
 
@@ -82,7 +89,7 @@ using BitTorrent, as well as the process of creating the .torrent file.
 ----------------------------
 
   ,----
-  | $ wget http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.4/securityonion-12.04.4-20140222.iso.md5
+  | wget wget http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso.md5
   `----
 
 
@@ -90,13 +97,10 @@ using BitTorrent, as well as the process of creating the .torrent file.
 --------------------
 
   ,----
-  | $ ls -lt securityonion-12.04.4-20140222.iso*
-  | -rw-r--r--   1 gmj            gmj      1381050368 2014-02-23 07:09 securityonion-12.04.4-20140222.iso
-  | -rw-r--r--   1 gmj            gmj            69 2014-02-23 07:05 securityonion-12.04.4-20140222.iso.md5
-  | $ md5sum securityonion-12.04.4-20140222.iso
-  | 4107d6b6c469b27014da7ce26f249e5e  securityonion-12.04.4-20140222.iso
-  | $ cat securityonion-12.04.4-20140222.iso.md5
-  | 4107d6b6c469b27014da7ce26f249e5e  securityonion-12.04.4-20140222.iso
+  | $ md5sum securityonion-12.04.5-20140903.iso
+  | MD5 (securityonion-12.04.5-20140903.iso) = bf8dc037ba20a0a559135d3db796fb48
+  | $ cat securityonion-12.04.5-20140903.iso.md5 
+  | bf8dc037ba20a0a559135d3db796fb48  securityonion-12.04.5-20140903.iso
   `----
 
 
@@ -125,20 +129,22 @@ using BitTorrent, as well as the process of creating the .torrent file.
 
   I'm using deluge on Ubuntu. Other torrent clients should be similar.
 
-  - [X] Open deluge (`apt-get install deluge' first if needed)
-  - [X] Choose "file -> create torrent" and select the .iso file
-  - [X] Add the "webseed" using the iso download URL. This is
+  - [ ] Open deluge (`apt-get install deluge' first if needed)
+  - [ ] Choose "file -> create torrent" and select the .iso file
+  - [ ] Add the "webseed" using the iso download URL. This is
     important. This is how people can download the file if there are
     no other seeders.
-  - [X] Save the torrent file.
+  - [ ] Save the torrent file.
 
 
 2.3 Put the .torrent file some place people can get it.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   I put a copy
-  here. [http://port111.com/securityonion-12.04.4-20140222.iso.torrent]
+  here. [http://port111.com/securityonion-12.04.5-20140903.iso.torrent]
   This could be dropbox, a URL, an email attachment, etc.
+
+  Download stats are available here [http://port111.com/webalizer/]
 
 
 2.4 Test the download and verify the md5 as above
