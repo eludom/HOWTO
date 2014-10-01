@@ -3,20 +3,20 @@
 #
 # http://ergoemacs.org/emacs/building_emacs_from_git_repository.html
 #
-# Tested by hand, but this script is not tested.
-
 # install essential build tools
 sudo apt-get install build-essential
 
 # get all dependencies of a previous emacs version
-sudo apt-get build-dep emacs23
+sudo apt-get build-dep emacs23 # may have to uncomment deb-src lines in /etc/apt/sources.list
 mkdir -p ~/git
 cd ~/git
-git clone https://github.com/mirrors/emacs
+sudo apt-get install git
+git clone https://github.com/mirrors/emacs 
+cd ~/git/emacs
 ./autogen.sh
 ./configure
 make bootstrap
-make
+sudo make install
 
 # # prepend emacs path to environment variable PATH
 # PATH=$HOME/git/emacs/src:$PATH
