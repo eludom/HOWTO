@@ -1045,7 +1045,9 @@ index c928980..86e2463 100644
 
   Actual use/application will depend on context.
 
-  Corrections or suggestions welcome.
+  Corrections or suggestions welcome.   Email gmj AT pobox DOT com or
+  just comment at
+  https://github.com/eludom/HOWTO/blob/master/GoogleAPIUsageReports.org 
 
 * Useful References
 
