@@ -7,7 +7,7 @@
 sudo apt-get install build-essential
 
 # get all dependencies of a previous emacs version
-sudo apt-get build-dep emacs23 # may have to uncomment deb-src lines in /etc/apt/sources.list
+sudo apt-get -y build-dep emacs23 # may have to uncomment deb-src lines in /etc/apt/sources.list
 mkdir -p ~/git
 cd ~/git
 sudo apt-get install git

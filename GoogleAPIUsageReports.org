@@ -1,0 +1,1064 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:t c:nil creator:comment d:(not "LOGBOOK") date:t
+#+OPTIONS: e:t email:nil f:t inline:t num:t p:nil pri:nil prop:nil
+#+OPTIONS: stat:t tags:t tasks:t tex:t timestamp:t toc:2 todo:t |:t
+#+TITLE: Creating Google API Usage Reports using OAuth and Python
+#+DATE: <2014-11-26 Wed>
+#+AUTHOR: George Jones
+#+EMAIL: gmj AT pobox DOT com
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.0.50.1 (Org mode 8.3beta)
+
+
+* Bottom Line Up Front
+  #+BEGIN_EXAMPLE
+  71 [11:52:41] gmj@devnix googleAPIs/ $ python callGoogleAPIs.py
+ usage reports for  2014-10-07
+ usage reports for  2014-10-08
+ usage reports for  2014-10-09
+   BAR@example.com      gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+ usage reports for  2014-10-10
+ usage reports for  2014-10-11
+   FOO@example.com      gmail:last_webmail_time   2014-10-11T07:26:42.000Z
+ usage reports for  2014-10-12
+ usage reports for  2014-10-13
+   george@example.com      gmail:last_webmail_time   2014-10-13T15:11:36.000Z
+   FOO@example.com      gmail:last_webmail_time   2014-10-13T23:52:31.000Z
+usage reports NOT AVAILABLE for  2014-10-14
+ usage reports for  2014-10-15
+   george@example.com      gmail:last_webmail_time   2014-10-15T22:24:44.000Z
+   FOO@example.com      gmail:last_webmail_time   2014-10-15T22:13:10.000Z
+usage reports NOT AVAILABLE for  2014-10-16
+ usage reports for  2014-10-17
+   FOO@example.com      gmail:last_webmail_time   2014-10-17T11:37:13.000Z
+ usage reports for  2014-10-18
+   george@example.com      gmail:last_webmail_time   2014-10-18T08:19:35.000Z
+   FOO@example.com      gmail:last_webmail_time   2014-10-18T09:47:43.000Z
+ usage reports for  2014-10-19
+ usage reports for  2014-10-20
+ usage reports for  2014-10-21
+
+  #+END_EXAMPLE
+
+
+
+* What
+  This is a test of the Google API data (reports API from Admin SDK)
+  for two infrequent users of a google domain, "FOO@example.com" and
+  "BAR@example.com".
+
+  The purpose is to understand what the APIs are telling us. See:
+
+  https://developers.google.com/admin-sdk/reports/v1/reference/usage-ref-appendix-a/users-gmail
+
+* Why
+  Learning to do the OAuth authentication, how to do the set up,
+  which API calls to use, and how to unwrap the JSON were not as easy
+  or well (concisely) documented as one might hope.   So, I'm
+  documenting my learning process for my (future) self and others who
+  might want to do similar things
+
+* Prerequisites
+  - [ ] Administrative access to a domain using google apps
+  - [ ] Installation of python libraries
+     #+BEGIN_EXAMPLE
+     sudo apt-get install python-pip     
+     sudo pip install --upgrade google-api-python-client
+     #+END_EXAMPLE
+
+     See
+    https://developers.google.com/api-client-library/python/start/installation
+     
+  - [ ] A synchronized clock
+    #+BEGIN_EXAMPLE
+    sudo ntpdate pool.ntp.org
+    #+END_EXAMPLE
+* Setup
+** Sign in
+   - [ ] Sign in to gmail.com using an account with admin rights for the domain
+** Create a project
+   - [ ] Go To https://console.developers.google.com/
+   - [ ] Click "Create Project", choose project name (intended for
+     humans) and Project ID (not be confused with the Client
+     ID). Accepting the default ID is probably ﬁne. Wait a minute or
+     two while it is created. 
+   - [ ] Select your project https://console.developers.google.com/project
+   - [ ] Under APIs & Auth/APIs/Browse APIs choose the API(s) you
+     want. For reports, you need ADMIN SDK. 
+   - [ ] Select "ON" for the API.
+** Create a new Client ID
+   - [ ] Under APIs & Auth/APIs/Credentials/OAuth choose Create new Client ID
+   - [ ] Select Service Accont and Create
+   - [ ] Remember the private key secret "notasecret" displayed
+   - [ ] Click "OK Got it". This will generate and donload a .p12
+     ﬁle. SAVE THIS FILE AND KEEP IT SECRET, KEEP IT SAFE 
+   - [ ] Make note of the Client ID. You will use this in the step
+     [[*Authorize the service account for the APIs required]] below. 
+   - [ ] Make note of the Email Address of the service account. This will be needed in the code.
+   - [ ] Also make note of the login credentials
+     (you@yourdomain.com). You will also use this in the code for the
+     reports API. Think unix su(1) command.  You will be performing
+     operations as this user. If, for instance, you are requesting
+     account information or data owned by other users, it will
+     probably have have to be a "Super Admin" account. 
+** Authorize the service account for the APIs required
+   - [ ] Go to https://admin.google.com/
+   - [ ] Go to Security, click Show More
+   - [ ] Go to Advanced Settings
+   - [ ] Choose /Manage API client access/ NOTE: the docs currently say
+     to choose Manage third party OAuth Client access, but the actual
+     choice needed is Manage API client access. 
+   - [ ] Enter the client name (which is the "Client ID" (not Email address) form above.
+   - [ ] Enter the APIs ("API Scopes") to authorize, for instance
+     https://www.googleapis.com/auth/admin.reports.usage.readonly. Click
+     "Authorze" 
+* Code
+#+BEGIN_SRC 
+#!/usr/bin/python2.4
+
+"""Dump various user activity logs using Google Admin SDK reports SPI.
+
+Based very loosely (at this point) on sample code from:
+
+  https://code.google.com/p/google-api-python-client/source/browse/#hg%2Fsamples%2Fservice_account
+
+Connect using an OAath2 service account and pull down info using the
+Gooole reports API.
+
+Service accounts are created in the Google API Console. See the documentation
+for more information:
+
+  https://developers.google.com/console/help/#WhatIsKey
+
+Usage:
+$ python callGoogleAPIs.py
+"""
+__author__ = 'gmj AT pobox DOT com'
+
+import httplib2
+import pprint
+import sys
+import json
+
+reportOnTheseParameters = [ 
+    "gmail:last_access_time",
+    "gmail:last_interaction_time",
+    "gmail:last_imap_time",
+    "gmail:last_pop_time",
+    "gmail:last_webmail_time",
+    "gmail:num_emails_received",
+    "gmail:num_emails_sent",
+    "docs:num_uploaded_files",
+]
+
+reportOnThisUser = "FOO@example.com"
+
+from apiclient.discovery import build
+from oauth2client.client import SignedJwtAssertionCredentials
+
+
+def list2dict(someList):
+    """ Cooerce google API prameter lists in o a single dictornary
+
+
+    e.g. take a list such as this
+
+    [
+    {u'intValue': u'0',
+    u'name': u'gmail:num_spam_emails_received'},
+    {u'datetimeValue': u'2014-10-11T01:47:06.000Z',
+    u'name': u'gmail:last_access_time'},
+    ]
+
+    and return a dictorary of the form
+
+    returnThis['gmail:last_access_time'] = 
+        {'type' : 'datetimeValue',
+         'value' : '2014-10-11T01:47:06.000Z'}
+     
+    This is for parsing some JSON objects coming back from the Google APIs.
+    There is probably a better way ("import json", then ???)
+
+
+    Then (assuming this functions return value is assigned to "foo"), one can say things like
+
+    if "docs:num_uploaded_files" in foo:
+       print "docs:num_uploaded_files ", foo["docs:num_uploaded_files"]["value"]
+
+    """
+
+    returnThis = {}
+    
+    for i in range(len(someList)):
+        name = someList[i]["name"]
+        
+        for theType in ['intValue','datetimeValue','stringValue','boolValue']:
+            if theType in someList[i]:
+                value = someList[i][theType]
+                returnThis[name] = {"type" : theType, "value" : value}
+
+    return returnThis
+
+
+def main(argv):
+    # Load the key in PKCS 12 format that you downloaded from the Google API
+    # Console when you created your Service account.
+    f = file('FOO-oauth2-bis-xxxxxxxxxxxx.p12', 'rb')
+    key = f.read()
+    f.close()
+
+    # Create an httplib2.Http object to handle our HTTP requests and authorize it
+    # with the Credentials. Note that the first parameter, service_account_name,
+    # is the Email address created for the Service account. It must be the email
+    # address associated with the key that was created.
+
+    # Need to add "sub" to act as super user per
+    # http://stackoverflow.com/questions/18597371/error-calling-reports-api-v1
+
+    credentials = SignedJwtAssertionCredentials(
+        service_account_name='xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0g0@developer.gserviceaccount.com',
+        private_key=key,
+        scope='https://www.googleapis.com/auth/admin.reports.usage.readonly',
+        sub='BAZ@example.com')
+
+
+    http = httplib2.Http()
+    http = credentials.authorize(http)
+
+
+    # The API to use was non-obvious to me, and apparently others:
+    # https://stackoverflow.com/questions/20270044/python-api-client-doesnt-recognize-login-type-for-reports-api/20285677#20285677?s=1f1e3f027804420fad25bf54902716df
+
+    service = build('admin', 'reports_v1', http=http)
+
+
+    # API for userUsageReport().get()
+
+    # https://developers.google.com/resources/api-libraries/documentation/admin/reports_v1/python/latest/admin_reports_v1.userUsageReport.html 
+
+    #
+    # List my usage records for a date range
+    # 
+
+    year = "2014"
+    month = "10"
+    for day in range(1,32):
+        theDate = year + '-' + month + '-' + "%02d" % day
+
+        result = {}
+        
+        result = service.userUsageReport().get(
+            userKey=reportOnThisUser,
+            date=theDate,
+            maxResults=10).execute()
+
+        
+        if 'warnings' in result:
+            print "warnings -->"
+            pprint.pprint(result['warnings'])                        
+        elif 'usageReports' in result:
+            print "usageReports -->"
+            print len(result['usageReports']), " usage reports for ", theDate
+
+            for reportNum in range(0,len(result['usageReports'])):
+                print "  userEmail: ", result['usageReports'][reportNum]['entity']['userEmail']
+                params = list2dict(result['usageReports'][reportNum]['parameters'])
+
+                for reportOnThis in reportOnTheseParameters:
+                    if reportOnThis in params:
+                        print "    ", reportOnThis, " ", params[reportOnThis]["value"]    
+
+                        #
+    # Do more interesting things with the API here ...
+    #
+
+#    pprint.pprint(result)
+
+if __name__ == '__main__':
+    main(sys.argv)
+#+END_SRC  
+* Raw Data
+  #+BEGIN_EXAMPLE
+45 [10:37:26] gmj@devnix googleAPIs/ $  python callGoogleAPIs.py
+usageReports -->
+1  usage reports for  2014-10-01
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-02T06:32:43.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-30T00:06:22.000Z
+     gmail:num_emails_received   9
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-02
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-03T00:08:30.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-30T00:06:22.000Z
+     gmail:num_emails_received   14
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-03
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-04T04:41:20.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-30T00:06:22.000Z
+     gmail:num_emails_received   7
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-04
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-04T20:28:22.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-30T00:06:22.000Z
+     gmail:num_emails_received   2
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-05
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-06T06:42:53.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-30T00:06:22.000Z
+     gmail:num_emails_received   5
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-06
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-07T06:29:31.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-30T00:06:22.000Z
+     gmail:num_emails_received   10
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-07
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-08T05:05:35.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-30T00:06:22.000Z
+     gmail:num_emails_received   8
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-08
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-09T06:09:10.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   5
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-09
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-10T05:46:34.000Z
+     gmail:last_interaction_time   2014-09-30T00:06:20.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   6
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-10
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-10T23:14:31.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   6
+     gmail:num_emails_sent   2
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-11
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-11T12:04:20.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   1
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-12
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-13T03:53:17.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   7
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-13
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-14T06:21:41.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   8
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+warnings -->
+[{u'code': u'DATA_NOT_AVAILABLE',
+  u'data': [{u'key': u'date', u'value': u'2014-10-14'},
+            {u'key': u'application', u'value': u'gmail'}],
+  u'message': u'Sorry, data for date 2014-10-14 for application gmail is not available.'},
+ {u'code': u'DATA_NOT_AVAILABLE',
+  u'data': [{u'key': u'date', u'value': u'2014-10-14'},
+            {u'key': u'application', u'value': u'docs'}],
+  u'message': u'Sorry, data for date 2014-10-14 for application docs is not available.'}]
+usageReports -->
+1  usage reports for  2014-10-15
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-16T06:50:06.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   5
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+warnings -->
+[{u'code': u'DATA_NOT_AVAILABLE',
+  u'data': [{u'key': u'date', u'value': u'2014-10-16'},
+            {u'key': u'application', u'value': u'docs'}],
+  u'message': u'Sorry, data for date 2014-10-16 for application docs is not available.'}]
+usageReports -->
+1  usage reports for  2014-10-17
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-18T04:21:21.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   5
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-18
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-19T03:00:35.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   3
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-19
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-20T06:01:48.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   6
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-20
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-21T01:51:27.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   7
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-21
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-22T00:38:17.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   13
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-22
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-23T02:20:06.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   8
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-23
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-24T01:34:17.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   17
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+warnings -->
+[{u'code': u'DATA_NOT_AVAILABLE',
+  u'data': [{u'key': u'date', u'value': u'2014-10-24'},
+            {u'key': u'application', u'value': u'gplus'}],
+  u'message': u'Sorry, data for date 2014-10-24 for application gplus is not available.'}]
+usageReports -->
+1  usage reports for  2014-10-25
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-26T01:30:55.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   3
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-26
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-27T06:27:50.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   9
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-27
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-28T01:33:29.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   5
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+10-081  usage reports for  2014-10-28
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-29T01:20:34.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   11
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-29
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-30T06:51:53.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   10
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-30
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-10-31T01:25:18.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   9
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+usageReports -->
+1  usage reports for  2014-10-31
+  userEmail:  BAR@example.com
+     gmail:last_access_time   2014-11-01T01:27:14.000Z
+     gmail:last_interaction_time   2014-10-10T23:14:31.000Z
+     gmail:last_imap_time   2014-08-26T20:39:40.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-09T01:59:16.000Z
+     gmail:num_emails_received   9
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   3
+46 [10:41:39] FOO@devnix googleAPIs/ $  python callGoogleAPIs.py
+usageReports -->
+1  usage reports for  2014-10-01
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-01T22:18:50.000Z
+     gmail:last_interaction_time   2014-10-01T22:18:48.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-26T14:32:38.000Z
+     gmail:num_emails_received   1
+     gmail:num_emails_sent   1
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-02
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-02T23:03:45.000Z
+     gmail:last_interaction_time   2014-10-02T16:02:05.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-26T14:32:38.000Z
+     gmail:num_emails_received   1
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-03
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-03T22:32:53.000Z
+     gmail:last_interaction_time   2014-10-03T20:41:27.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-26T14:32:38.000Z
+     gmail:num_emails_received   2
+     gmail:num_emails_sent   3
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-04
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-04T18:28:25.000Z
+     gmail:last_interaction_time   2014-10-03T20:41:27.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-26T14:32:38.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-05
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-05T23:23:14.000Z
+     gmail:last_interaction_time   2014-10-05T23:23:12.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-26T14:32:38.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   1
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-06
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-06T18:57:08.000Z
+     gmail:last_interaction_time   2014-10-05T23:23:12.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-26T14:32:38.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-07
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-07T19:09:56.000Z
+     gmail:last_interaction_time   2014-10-05T23:23:12.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-26T14:32:38.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-08
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-08T19:29:48.000Z
+     gmail:last_interaction_time   2014-10-08T12:54:08.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-09-26T14:32:38.000Z
+     gmail:num_emails_received   2
+     gmail:num_emails_sent   2
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-09
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-10T06:34:13.000Z
+     gmail:last_interaction_time   2014-10-10T06:34:13.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-10T06:05:05.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-10
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-11T01:47:06.000Z
+     gmail:last_interaction_time   2014-10-10T22:12:55.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-11T01:47:06.000Z
+     gmail:num_emails_received   5
+     gmail:num_emails_sent   6
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-11
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-11T19:43:52.000Z
+     gmail:last_interaction_time   2014-10-11T07:26:41.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-11T07:26:42.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-12
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-12T19:46:40.000Z
+     gmail:last_interaction_time   2014-10-11T07:26:41.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-11T07:26:42.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-13
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-13T23:52:31.000Z
+     gmail:last_interaction_time   2014-10-13T23:40:37.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-13T23:52:31.000Z
+     gmail:num_emails_received   8
+     gmail:num_emails_sent   1
+     docs:num_uploaded_files   0
+warnings -->
+[{u'code': u'DATA_NOT_AVAILABLE',
+  u'data': [{u'key': u'date', u'value': u'2014-10-14'},
+            {u'key': u'application', u'value': u'gmail'}],
+  u'message': u'Sorry, data for date 2014-10-14 for application gmail is not available.'},
+ {u'code': u'DATA_NOT_AVAILABLE',
+  u'data': [{u'key': u'date', u'value': u'2014-10-14'},
+            {u'key': u'application', u'value': u'docs'}],
+  u'message': u'Sorry, data for date 2014-10-14 for application docs is not available.'}]
+usageReports -->
+1  usage reports for  2014-10-15
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-15T22:13:10.000Z
+     gmail:last_interaction_time   2014-10-15T22:03:01.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-15T22:13:10.000Z
+     gmail:num_emails_received   2
+     gmail:num_emails_sent   1
+     docs:num_uploaded_files   0
+warnings -->
+[{u'code': u'DATA_NOT_AVAILABLE',
+  u'data': [{u'key': u'date', u'value': u'2014-10-16'},
+            {u'key': u'application', u'value': u'docs'}],
+  u'message': u'Sorry, data for date 2014-10-16 for application docs is not available.'}]
+usageReports -->
+1  usage reports for  2014-10-17
+  userEmail:  FOO@example.com
+     gmail:last_acceoss_time   2014-10-17T20:51:00.000Z
+     gmail:last_interaction_time   2014-10-16T23:06:50.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-17T11:37:13.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-18
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-18T21:14:43.000Z
+     gmail:last_interaction_time   2014-10-18T09:25:41.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-18T09:47:43.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-19
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-19T21:18:33.000Z
+     gmail:last_interaction_time   2014-10-18T09:25:41.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-18T09:47:43.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-20
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-21T01:39:17.000Z
+     gmail:last_interaction_time   2014-10-18T09:25:41.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-18T09:47:43.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-21
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-22T02:40:19.000Z
+     gmail:last_interaction_time   2014-10-18T09:25:41.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-18T09:47:43.000Z
+     gmail:num_emails_received   1
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-22
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-23T02:38:50.000Z
+     gmail:last_interaction_time   2014-10-18T09:25:41.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-18T09:47:43.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-23
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-24T05:05:18.000Z
+     gmail:last_interaction_time   2014-10-24T05:05:16.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-23T13:30:19.000Z
+     gmail:num_emails_received   3
+     gmail:num_emails_sent   3
+     docs:num_uploaded_files   0
+warnings -->
+[{u'code': u'DATA_NOT_AVAILABLE',
+  u'data': [{u'key': u'date', u'value': u'2014-10-24'},
+            {u'key': u'application', u'value': u'gplus'}],
+  u'message': u'Sorry, data for date 2014-10-24 for application gplus is not available.'}]
+usageReports -->
+1  usage reports for  2014-10-25
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-26T02:52:40.000Z
+     gmail:last_interaction_time   2014-10-24T05:05:16.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-23T13:30:19.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-26
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-27T02:56:17.000Z
+     gmail:last_interaction_time   2014-10-24T05:05:16.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-23T13:30:19.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-27
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-28T02:56:53.000Z
+     gmail:last_interaction_time   2014-10-24T05:05:16.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-23T13:30:19.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-28
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-29T03:07:50.000Z
+     gmail:last_interaction_time   2014-10-24T05:05:16.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-23T13:30:19.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-29
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-30T03:07:09.000Z
+     gmail:last_interaction_time   2014-10-24T05:05:16.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-23T13:30:19.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-30
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-10-31T03:09:06.000Z
+     gmail:last_interaction_time   2014-10-24T05:05:16.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-23T13:30:19.000Z
+     gmail:num_emails_received   1
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+usageReports -->
+1  usage reports for  2014-10-31
+  userEmail:  FOO@example.com
+     gmail:last_access_time   2014-11-01T03:11:40.000Z
+     gmail:last_interaction_time   2014-10-24T05:05:16.000Z
+     gmail:last_imap_time   1970-01-01T00:00:00.000Z
+     gmail:last_pop_time   1970-01-01T00:00:00.000Z
+     gmail:last_webmail_time   2014-10-23T13:30:19.000Z
+     gmail:num_emails_received   0
+     gmail:num_emails_sent   0
+     docs:num_uploaded_files   0
+47 [10:46:37] FOO@devnix googleAPIs/ $ <
+  
+  #+END_EXAMPLE
+* Analysis
+** BAR@example.com login analysis
+   BAR appears to have logged in on
+       - 2014-10-09
+** FOO@example.com login analysis
+   FOO appears to have logged in on:
+
+   - 2014-10-10
+   - 2014-10-15
+   - 2014-10-17
+   - 2014-10-18
+   - 2014-10-23      
+
+* Change code to only show days users logged in to web mail during a small time window
+
+  - Cut down on the # of API calls and running time, restrict the the
+    two week window 2014-10-07 to 2014-10-21
+  - Only report on webmail time
+  - Clean up the text output
+
+    #+BEGIN_EXAMPLE
+iff --git a/callGoogleAPIs.py b/callGoogleAPIs.py
+index c928980..86e2463 100644
+--- a/callGoogleAPIs.py
++++ b/callGoogleAPIs.py
+@@ -25,17 +25,17 @@ import sys
+ import json
+ 
+ reportOnTheseParameters = [ 
+-    "gmail:last_access_time",
+-    "gmail:last_interaction_time",
+-    "gmail:last_imap_time",
+-    "gmail:last_pop_time",
++#    "gmail:last_access_time",
++#    "gmail:last_interaction_time",
++#    "gmail:last_imap_time",
++#    "gmail:last_pop_time",
+     "gmail:last_webmail_time",
+-    "gmail:num_emails_received",
+-    "gmail:num_emails_sent",
+-    "docs:num_uploaded_files",
++#    "gmail:num_emails_received",
++#    "gmail:num_emails_sent",
++#    "docs:num_uploaded_files",
+ ]
+ 
+-reportOnThisUser = "FOO@example.com"
++reportOnThisUser = "all"
+ 
+ from apiclient.discovery import build
+ from oauth2client.client import SignedJwtAssertionCredentials
+@@ -126,7 +126,7 @@ def main(argv):
+ 
+     year = "2014"
+     month = "10"
+-    for day in range(1,32):
++    for day in range(7,22):
+         theDate = year + '-' + month + '-' + "%02d" % day
+ 
+         result = {}
+@@ -138,19 +138,23 @@ def main(argv):
+ 
+         
+         if 'warnings' in result:
+-            print "warnings -->"
+-            pprint.pprint(result['warnings'])                        
++            print "usage reports NOT AVAILABLE for ", theDate            
+         elif 'usageReports' in result:
+-            print "usageReports -->"
+-            print len(result['usageReports']), " usage reports for ", theDate
++            print " usage reports for ", theDate
+ 
+             for reportNum in range(0,len(result['usageReports'])):
+-                print "  userEmail: ", result['usageReports'][reportNum]['entity']['userEmail']
++                userEmail =  result['usageReports'][reportNum]['entity']['userEmail']
+                 params = list2dict(result['usageReports'][reportNum]['parameters'])
+ 
+                 for reportOnThis in reportOnTheseParameters:
+                     if reportOnThis in params:
+-                        print "    ", reportOnThis, " ", params[reportOnThis]["value"]    
++                        theValue = params[reportOnThis]["value"]
++
++                        # Do simple-minded matching to report only users who have 
++                        # logged in to web mail today.
++                        
++                        if theValue.startswith(theDate):
++                            print "  ", userEmail, "    ", reportOnThis, " ", theValue
+ 
+                         #
+     # Do more interesting things with the API here ...
+
+    #+END_EXAMPLE
+
+* Conclusions.
+
+  It works.  See [[*Bottom Line Up Front]].
+
+  I spent a bit of time learning all this.  I don't want to forget it
+  or have to re-learn it, so it's here, mostly for myself but also in
+  hopes that others will find it useful.
+
+  Actual use/application will depend on context.
+
+  Corrections or suggestions welcome.   Email gmj AT pobox DOT com or
+  just comment at
+  https://github.com/eludom/HOWTO/blob/master/GoogleAPIUsageReports.org 
+
+* Useful References
+
+  - Reports API Docs :: https://developers.google.com/google-apps/reporting/
+  - OAuth2 with Google explained :: https://developers.google.com/accounts/docs/OAuth2
+  - Reports API Client Library for Python :: https://developers.google.com/admin-sdk/reports/v1/api-lib/python
+  - API Client Libary :: https://developers.google.com/api-client-library/python/
+
+  - Sample Service Account creation :: https://code.google.com/p/google-api-python-client/source/browse/samples/service_account/tasks.py
+  - Scope for admin reports :: https://developers.google.com/admin-sdk/reports/v1/guides/authorizing
+  - Use the right, non-obvious service name :: https://stackoverflow.com/questions/20270044/python-api-client-doesnt-recognize-login-type-for-reports-api/20285677#20285677?s=1f1e3f027804420fad25bf54902716df
+  - Error calling Reports API v1 :: http://stackoverflow.com/questions/18597371/error-calling-reports-api-v1
+  - Perform Google Apps Domain-Wide Delegation of Authority :: https://developers.google.com/admin-sdk/reports/v1/guides/delegation
+
