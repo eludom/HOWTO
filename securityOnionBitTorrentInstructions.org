@@ -3,7 +3,7 @@
 #+OPTIONS: e:t email:nil f:t inline:t num:t p:nil pri:nil prop:nil
 #+OPTIONS: stat:t tags:t tasks:t tex:t timestamp:t toc:nil todo:t |:t
 #+TITLE: Security Onion BitTorrent Instructions
-#+DATE: <2014-09-04>
+#+DATE: <2015-06-17 21:43:24 Wednesday>
 #+AUTHOR: George Jones <gmj@pobox.com>
 #+EMAIL: gmj@pobox.com
 #+DESCRIPTION:
@@ -24,68 +24,108 @@ file.
   version:
 
   - [ ] Click on the link
-    http://port111.com/securityonion-12.04.5-20140903.iso.torrent. This
+    http://port111.com/securityonion-12.04.5.2-20150617.iso.torrent. This
     will download the .torrent file (to =~/Downloads= by default)
   - [ ] Click on the .torrent file
   - [ ] When transmission comes up with the "Torrent options" window,
     select the .torrent file and click "Open".  The download will
     begin, in ~/Downloads by default
   - [ ] When done, verify the .md5
-#+BEGIN_EXAMPLE
-$ md5sum securityonion-12.04.5-20140903.iso
-MD5 (securityonion-12.04.5-20140903.iso) = bf8dc037ba20a0a559135d3db796fb48
-$ cat securityonion-12.04.5-20140903.iso.md5 
-bf8dc037ba20a0a559135d3db796fb48  securityonion-12.04.5-20140903.iso
-#+END_EXAMPLE
+
+    #+begin_src sh  :results output :exports both
+    cd ~/Downloads/iso
+    md5sum securityonion-12.04.5.2-20150617.iso
+    cat securityonion-12.04.5.2-20150617.iso.md5
+    #+end_src
+
+    #+RESULTS:
+    : e35846293dcecf76e5b8d39f6d48c9de  securityonion-12.04.5.2-20150617.iso
+    : e35846293dcecf76e5b8d39f6d48c9de  securityonion-12.04.5.2-20150617.iso
+
 
 * How to create a .torrent file for Security Onion
 ** Download and verify the ISO
-*** Go to the web page in a browser http://sourceforge.net/projects/security-onion/files/12.04.5/
+*** Go to the web page in a browser http://sourceforge.net/projects/security-onion/files/12.04.5.2/
 *** Get a direct download like to use for the webseed
     Start a download with wget. This will do a redirect.
 
-: wget http://downloads.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
+    #+begin_src sh  :results output :exports src
+    wget http://downloads.sourceforge.net/project/security-onion/12.04.5.2/securityonion-12.04.5.2-20150617.iso
+    #+end_src
+
 
     Grab the redirect URL. This is the real iso download URL.  It will be something like:
 
-: http://hivelocity.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
+    #+begin_example
+    http://iweb.dl.sourceforge.net/project/security-onion/12.04.5.2/securityonion-12.04.5.2-20150205.iso  
+    #+end_example
 
     Kill the first wget.  You might consider doing this a couple times
     to get multiple webseeds (downloads.sourceforge.net appears to be
     a round robin DNS rotation pointing at different mirror sites)
 
-I did this and got:
+    I did this and got:
 
-: http://hivelocity.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
-: http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
-: http://iweb.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
+
+    #+begin_example
+http://superb-dca2.dl.sourceforge.net/project/security-onion/12.04.5.2/securityonion-12.04.5.2-20150617.iso
+http://iweb.dl.sourceforge.net/project/security-onion/12.04.5.2/securityonion-12.04.5.2-20150617.iso
+    #+end_example
 
 *** Download the ISO
 
-: wget http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso
+    #+begin_src sh  :results output :exports code
+    cd ~/Downloads/iso
+    wget http://iweb.dl.sourceforge.net/project/security-onion/12.04.5.2/securityonion-12.04.5.2-20150617.iso
+    #+end_src
 
 *** Download the .md5 file
 
-: wget wget http://colocrossing.dl.sourceforge.net/project/security-onion/12.04.5/securityonion-12.04.5-20140903.iso.md5
+    #+begin_src sh  :results output :exports both
+    cd ~/Downloads/iso
+    wget http://iweb.dl.sourceforge.net/project/security-onion/12.04.5.2/securityonion-12.04.5.2-20150617.iso.md5
+    #+end_src
+
+    #+RESULTS:
+    #+begin_example
+    # Wed Jun 17 21:02:25 EDT 2015
+    --2015-06-17 21:02:25--  http://iweb.dl.sourceforge.net/project/security-onion/12.04.5.2/securityonion-12.04.5.2-20150617.iso.md5
+    Resolving iweb.dl.sourceforge.net (iweb.dl.sourceforge.net)... 2607:f748:10:12::5f:2, 70.38.0.134
+    Connecting to iweb.dl.sourceforge.net (iweb.dl.sourceforge.net)|2607:f748:10:12::5f:2|:80... connected.
+    HTTP request sent, awaiting response... 200 OK
+    Length: 71 [application/octet-stream]
+    Saving to: ‘securityonion-12.04.5.2-20150617.iso.md5’
+
+	 0K                                                       100% 10.9M=0s
+
+    2015-06-17 21:02:25 (10.9 MB/s) - ‘securityonion-12.04.5.2-20150617.iso.md5’ saved [71/71]
+
+#+end_example
 
 *** Verify the MD5
 
-#+BEGIN_EXAMPLE
-$ md5sum securityonion-12.04.5-20140903.iso
-MD5 (securityonion-12.04.5-20140903.iso) = bf8dc037ba20a0a559135d3db796fb48
-$ cat securityonion-12.04.5-20140903.iso.md5 
-bf8dc037ba20a0a559135d3db796fb48  securityonion-12.04.5-20140903.iso
-#+END_EXAMPLE
+    #+begin_src sh  :results output :exports both
+    cd ~/Downloads/iso
+    md5sum securityonion-12.04.5.2-20150617.iso
+    cat securityonion-12.04.5.2-20150617.iso.md5
+    #+end_src
 
-** Create the .torrent file
+    #+RESULTS:
+    : e35846293dcecf76e5b8d39f6d48c9de  securityonion-12.04.5.2-20150617.iso
+    : e35846293dcecf76e5b8d39f6d48c9de  securityonion-12.04.5.2-20150617.iso
+
+
+** create the .torrent file
 *** Choose some trackers
 
   I'm using the list from http://www.publicbt.com/
 
-: udp://tracker.openbittorrent.com:80/announce
-: udp://tracker.istole.it:80
-: udp://tracker.publicbt.com:80
-: udp://tracker.ccc.de:80
+  #+begin_example
+udp://tracker.openbittorrent.com:80/announce
+udp://tracker.istole.it:80
+udp://tracker.publicbt.com:80
+  #+end_example
+
 
   You may find other options here:
   http://en.wikipedia.org/wiki/BitTorrent_tracker#Public_trackers or
@@ -103,7 +143,7 @@ bf8dc037ba20a0a559135d3db796fb48  securityonion-12.04.5-20140903.iso
 
 ** Put the .torrent file some place people can get it.
      I put a copy
-     here. http://port111.com/securityonion-12.04.5-20140903.iso.torrent
+     here. http://port111.com/securityonion-12.04.5.2-20150205.iso.torrent
      This could be dropbox, a URL, an email attachment, etc.
      
      Download stats are available here http://port111.com/webalizer/
