@@ -1,22 +1,80 @@
-#! /bin/bash
-# Install latest emacs from src, per
-#
-# http://ergoemacs.org/emacs/building_emacs_from_git_repository.html
-#
-# install essential build tools
-sudo apt-get install build-essential
+#+TITLE: Build Emacs from Source on Ubuntu
+#+DATE: <2015-07-14 09:24:29 Tuesday>
+#+AUTHOR: George M Jones
+#+EMAIL: gmj@pobox.com
 
-# get all dependencies of a previous emacs version
-sudo apt-get -y build-dep emacs23 # may have to uncomment deb-src lines in /etc/apt/sources.list
-mkdir -p ~/git
-cd ~/git
-sudo apt-get install git
-git clone https://github.com/mirrors/emacs 
-cd ~/git/emacs
-./autogen.sh
-./configure
-make bootstrap
-sudo make install
+Install latest emacs from src, per
+http://ergoemacs.org/emacs/building_emacs_from_git_repository.html
+
+* Vars
+
+#+name: WHERE
+| git/github.com/mirrors |
+
+* Pre-reqs
+  #+begin_src sh  :results output :exports code :dir /sudo::
+  exec 2>&1;date;set -e; set -u; set -x
+  sudo apt-get install build-essential  
+  sudo apt-get -y build-dep emacs23 # may have to uncomment deb-src lines in /etc/apt/sources.listsudo apt-get -y build-dep emacs23 # may have to uncomment deb-src lines in /etc/apt/sources.list
+  sudo apt-get install git
+  #+end_src
+
+* Pull the sources
+  - Warning, first time, this will take a while
+
+  #+begin_src sh  :results output :exports code :var where=WHERE
+  exec 2>&1;date;set -e; set -u; set -x
+
+  # org babel expaions of ${HOME} and ~ is weird/broken
+  # Can't pass in '${HOME}/foo" and have it expand as expecet.
+  # TODO Figure out and fix.
+
+  cd ~
+  mkdir -p $where
+
+  echo where $where
+  echo '${where}/emacs' ${where}/eamcs
+
+  if [ -d ${where}/emacs ]; then
+     echo exists
+     cd ${where}/emacs
+     git pull
+  else
+     echo DNE
+     cd ${where}
+     git clone https://github.com/mirrors/emacs.git
+     cd emacs
+  fi
+  
+  #+end_src
+
+* Configure
+
+  #+begin_src sh  :results output :exports code :var where=WHERE
+  exec 2>&1;date;set -e; set -u; set -x
+
+  cd ~
+  cd ${where}/emacs
+  ./autogen.sh  || true
+  ./configure  || true
+  #+end_src
+
+* Build
+  #+begin_src sh  :results output :exports code :var where=WHERE
+  exec 2>&1;date;set -e; set -u; set -x
+
+  cd ~
+  cd $where/emacs
+  make bootstrap  
+  #+end_src
+
+* Install
+  #+begin_src sh  :results output :exports code  :var where=WHERE
+  exec 2>&1;date;set -e; set -u; set -x
+  cd ~
+  cd $where/emacs
+  sudo make install  
+  #+end_src
 
 # # prepend emacs path to environment variable PATH
 # PATH=$HOME/git/emacs/src:$PATH
