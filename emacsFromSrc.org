@@ -1,5 +1,5 @@
 #+TITLE: Build Emacs from Source on Ubuntu
-#+DATE: <2015-07-14 09:24:29 Tuesday>
+#+DATE: <2015-10-10 07:15:08 Saturday>
 #+AUTHOR: George M Jones
 #+EMAIL: gmj@pobox.com
 
@@ -38,6 +38,13 @@ http://ergoemacs.org/emacs/building_emacs_from_git_repository.html
   if [ -d ${where}/emacs ]; then
      echo exists
      cd ${where}/emacs
+     # discard stuff from last build
+     git reset --hard
+
+     # delete all of the last build stuff
+     git clean -xdf
+
+     # get latest update
      git pull
   else
      echo DNE
