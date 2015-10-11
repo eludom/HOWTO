@@ -1,10 +1,9 @@
 #+TITLE: Build Emacs from Source on Ubuntu
-#+DATE: <2015-10-10 07:17:23 Saturday>
+#+DATE: <2015-10-11 05:43:12 Sunday>
 #+AUTHOR: George M Jones
 #+EMAIL: gmj@pobox.com
 
-Install latest emacs from src, per Xah Lee:
-http://ergoemacs.org/emacs/building_emacs_from_git_repository.html 
+Install latest emacs from src, per Xah Lee: http://ergoemacs.org/emacs/building_emacs_from_git_repository.html 
 
 * Vars
 
