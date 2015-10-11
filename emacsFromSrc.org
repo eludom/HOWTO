@@ -1,17 +1,20 @@
-g#+TITLE: Build Emacs from Source on Ubuntu
-#+DATE: <2015-10-11 07:20:30 Sunday>
+#+TITLE: Build Emacs from Source on Ubuntu using Org Babel
+#+DATE: <2015-10-11 12:07:28 Sunday>
 #+AUTHOR: George M Jones
 #+EMAIL: gmj@pobox.com
 
 Install latest emacs from src, per Xah Lee: http://ergoemacs.org/emacs/building_emacs_from_git_repository.html 
 
-* Vars
+* DONE Define Vars
   First, set the following variables:
 
-  - BUILD_DIR :: where you're going to build.  Relative to ${HOME}
+  - BUILD_DIR :: where you're going to build.  This should be an
+       abolute path (because when we sudo to install, we want to
+       install from the place it's built, not relative to root's home
+       dir)
 
 #+name: BUILD_DIR
-| src |
+| /home/george/src    |
 
 * DONE Install pre-reqs
   #+begin_src sh  :results output :exports code :dir /sudo::
@@ -23,60 +26,12 @@ Install latest emacs from src, per Xah Lee: http://ergoemacs.org/emacs/building_
   sudo apt-get install git || true
   #+end_src
 
-  #+RESULTS:
-  #+begin_example
-  Sun Oct 11 06:02:49 EDT 2015
-  + sudo apt-get install build-essential
-  Reading package lists... 0%Reading package lists... 100%Reading package lists... Done
-  Building dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree       
-  Reading state information... 0%Reading state information... 0%Reading state information... Done
-  build-essential is already the newest version.
-  The following packages were automatically installed and are no longer required:
-    gcc-4.8-base:i386 libasn1-8-heimdal:i386 libasound2:i386 libcgmanager0:i386
-    libcurl3:i386 libdbus-glib-1-2:i386 libdbusmenu-glib4:i386
-    libdbusmenu-gtk4:i386 libgconf-2-4:i386 libgssapi3-heimdal:i386
-    libhcrypto4-heimdal:i386 libheimbase1-heimdal:i386 libheimntlm0-heimdal:i386
-    libhx509-5-heimdal:i386 libidn11:i386 libkrb5-26-heimdal:i386
-    libldap-2.4-2:i386 libnspr4:i386 libnss3:i386 libpango1.0-0:i386
-    libpangox-1.0-0:i386 libpangoxft-1.0-0:i386 libroken18-heimdal:i386
-    librtmp0:i386 libsasl2-2:i386 libsasl2-modules:i386 libsasl2-modules-db:i386
-    libsqlite3-0:i386 libssl1.0.0:i386 libstdc++6:i386 libudev1:i386
-    libwind0-heimdal:i386 libxft2:i386 libxss1:i386 libxtst6:i386
-  Use 'apt-get autoremove' to remove them.
-  0 upgraded, 0 newly installed, 0 to remove and 219 not upgraded.
-  + sudo apt-get -y build-dep emacs23
-  Reading package lists... 0%Reading package lists... 100%Reading package lists... Done
-  Building dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree       
-  Reading state information... 0%Reading state information... 0%Reading state information... Done
-  0 upgraded, 0 newly installed, 0 to remove and 219 not upgraded.
-  + sudo apt-get install git
-  Reading package lists... 0%Reading package lists... 100%Reading package lists... Done
-  Building dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree       
-  Reading state information... 0%Reading state information... 0%Reading state information... Done
-  git is already the newest version.
-  The following packages were automatically installed and are no longer required:
-    gcc-4.8-base:i386 libasn1-8-heimdal:i386 libasound2:i386 libcgmanager0:i386
-    libcurl3:i386 libdbus-glib-1-2:i386 libdbusmenu-glib4:i386
-    libdbusmenu-gtk4:i386 libgconf-2-4:i386 libgssapi3-heimdal:i386
-    libhcrypto4-heimdal:i386 libheimbase1-heimdal:i386 libheimntlm0-heimdal:i386
-    libhx509-5-heimdal:i386 libidn11:i386 libkrb5-26-heimdal:i386
-    libldap-2.4-2:i386 libnspr4:i386 libnss3:i386 libpango1.0-0:i386
-    libpangox-1.0-0:i386 libpangoxft-1.0-0:i386 libroken18-heimdal:i386
-    librtmp0:i386 libsasl2-2:i386 libsasl2-modules:i386 libsasl2-modules-db:i386
-    libsqlite3-0:i386 libssl1.0.0:i386 libstdc++6:i386 libudev1:i386
-    libwind0-heimdal:i386 libxft2:i386 libxss1:i386 libxtst6:i386
-  Use 'apt-get autoremove' to remove them.
-  0 upgraded, 0 newly installed, 0 to remove and 219 not upgraded.
-#+end_example
-
-
-* Pull the sources
+* DONE Pull the sources
   - Warning, first time, this will take a while
 
   #+begin_src sh  :results output :exports code :var build_dir=BUILD_DIR
   exec 2>&1;date;set -e; set -u; set -x
 
-  cd ${HOME} || true
   mkdir -p $build_dir || true
 
   echo build_dir $build_dir
@@ -102,54 +57,31 @@ Install latest emacs from src, per Xah Lee: http://ergoemacs.org/emacs/building_
   
   #+end_src
 
-  #+RESULTS:
-  #+begin_example
-  Sun Oct 11 06:06:56 EDT 2015
-  + cd /home/george
-  + mkdir -p src
-  + echo build_dir src
-  build_dir src
-  + echo '${build_dir}/emacs' src/eamcs
-  ${build_dir}/emacs src/eamcs
-  + '[' -d src/emacs ']'
-  + echo src/emacs does not exist. cloning.
-  src/emacs does not exist. cloning.
-  + cd src
-  + git clone https://github.com/mirrors/emacs.git
-  Cloning into 'emacs'...
-  + cd emacs
-#+end_example
-
-* Configure
+* DONE Configure
 
   #+begin_src sh  :results output :exports code :var build_dir=BUILD_DIR
   exec 2>&1;date;set -e; set -u; set -x
 
-  cd ${HOME} || true
   cd ${build_dir}/emacs
   ./autogen.sh  || true
   ./configure  || true
   #+end_src
-
-* Build
+  
+* DONE Build
   #+begin_src sh  :results output :exports code :var build_dir=BUILD_DIR
   exec 2>&1;date;set -e; set -u; set -x
 
   cd ${HOME} || true
-  cd $build_dir/emacs
-  make bootstrap  
+  cd $build_dir/emacs || true
+  make bootstrap  || true
   #+end_src
 
-* Install
-  #+begin_src sh  :results output :exports code  :var build_dir=BUILD_DIR
+* DONE Install
+  #+begin_src sh  :results output :exports code  :var build_dir=BUILD_DIR :dir /sudo::
   exec 2>&1;date;set -e; set -u; set -x
   cd ${HOME} || true
-  cd $build_dir/emacs
-  sudo make install  
+  cd $build_dir/emacs || true
+  sudo make install   || true
   #+end_src
 
-# # prepend emacs path to environment variable PATH
-# PATH=$HOME/git/emacs/src:$PATH
-# # make sure the dir is correct
-# at bottom of your ~/.bashrc.
 
