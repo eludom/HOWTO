@@ -1,5 +1,5 @@
 #+TITLE: Build Emacs from Source on Ubuntu using Org Babel
-#+DATE: <2015-10-11 12:07:28 Sunday>
+#+DATE: <2015-10-11 12:12:40 Sunday>
 #+AUTHOR: George M Jones
 #+EMAIL: gmj@pobox.com
 
@@ -71,7 +71,6 @@ Install latest emacs from src, per Xah Lee: http://ergoemacs.org/emacs/building_
   #+begin_src sh  :results output :exports code :var build_dir=BUILD_DIR
   exec 2>&1;date;set -e; set -u; set -x
 
-  cd ${HOME} || true
   cd $build_dir/emacs || true
   make bootstrap  || true
   #+end_src
@@ -79,7 +78,6 @@ Install latest emacs from src, per Xah Lee: http://ergoemacs.org/emacs/building_
 * DONE Install
   #+begin_src sh  :results output :exports code  :var build_dir=BUILD_DIR :dir /sudo::
   exec 2>&1;date;set -e; set -u; set -x
-  cd ${HOME} || true
   cd $build_dir/emacs || true
   sudo make install   || true
   #+end_src
