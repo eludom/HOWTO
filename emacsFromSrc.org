@@ -1,5 +1,5 @@
 #+TITLE: Build Emacs from Source on Ubuntu using Org Babel
-#+DATE: <2015-10-17 04:08:14 Saturday>
+#+DATE: <2016-06-23 07:34:50 Thursday>
 #+AUTHOR: George M Jones
 #+EMAIL: gmj@pobox.com
 
@@ -29,6 +29,11 @@ Install latest emacs from src, per Xah Lee: http://ergoemacs.org/emacs/building_
   # may have to uncomment deb-src lines in /etc/apt/sources.list
   sudo apt-get -y build-dep emacs23 || true 
   sudo apt-get install git || true
+  #+end_src
+* DONE Update system
+  #+begin_src sh  :results output :exports code :dir /sudo::
+  exec 2>&1;date;set -e; set -u; set -x
+  sudo apt-get -y update  && sudo apt-get -y upgrade
   #+end_src
 
 * DONE Pull the sources
