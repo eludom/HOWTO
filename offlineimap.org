@@ -1,0 +1,226 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t
+#+OPTIONS: num:2 p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+#+TITLE: offlineimap
+#+DATE: <2016-10-11 12:08:21 Tuesday>
+#+AUTHOR: George M Jones
+#+EMAIL: gmj@pobox.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.1.50.1 (Org mode 8.3.4)
+
+* Programming your mail with offlineimap and OAuth2
+  So, I thought I'd give [[https://notmuchmail.org/][notmuchmail]] a quick try this
+  morning because a) my mail is getting slow b) it's been a long time
+  since I hacked my email setup and c) it is clear that search
+  is one of the fundamental ways you need to interact with email in
+  modern times (short of abandoning it which is always tempting) and d)
+  gnus still feels clunky.
+
+  Simple, fast I thought.  But no.   The path leads through
+  [[http://docs.offlineimap.org/en/latest/][offlineimap]], which Google claims "app doesn't meet modern security standards", which a little
+  Googling translated to "does not use OAuth2", so now I'm in the
+  midst of setting up a Google Developer project to create tokens...
+
+** Setup and config files
+   Here are the config files and steps for myself and others to include later
+   versions of myself...
+*** Install offline IMAP
+    Build and install from source to get OAuth2 support (apt-get
+    version in Ubuntu archives did not have it as of <2016-07-23 Sat>)
+
+    Git the latest source.
+
+    #+begin_example
+    git clone https://github.com/OfflineIMAP/offlineimap.git
+    #+end_example
+
+    Make sure it has OAuth support
+
+    #+begin_example
+    find offlineimap -exec grep -i oauth \{\} \; |& grep -v directory |  head
+
+- offlineimap.conf: XOAUTH2: expose and document the oauth2_request_url option. [Nicolas Sebrecht]
+- offlineimap.conf: improve documentation for oauth2. [Nicolas Sebrecht]
+- XOAUTH2: don't force oauth2_request_url to be defined. [Nicolas Sebrecht]
+- XOAUTH2: raise error when oauth_request_url is missing for IMAP type. [Nicolas Sebrecht]
+Some bugs got fixed. XOAUTH2 now honors the proxy configuration option.  Error
+- XOAUTH2 handler: urlopen with proxied socket.
+- Allow authorization via XOAUTH2 using access token.
+- Declare XOAUTH2 stable.
+- Support for XOAUTH2;
+- Learn XOAUTH2 authentication (used by Gmail servers).
+   #+end_example
+
+   Build
+
+   #+begin_example
+    cd offlineimap/
+    make
+    sudo python setup.py install
+    hash -r # to get rid of path to old version
+    /usr/local/bin/offlineimap --version
+    7.0.0
+   #+end_example 
+
+*** Create Google ClientID and Secret for use generating OAuth tokens
+    Mostly per instructions here http://christop.club/2014/01/19/sup/, 
+
+    - Go to the Google Developers Console
+      https://console.cloud.google.com/
+    - Create a new project, make note of name
+    - Go to the API console
+      https://console.cloud.google.com/apis/dashboard?project=YOURPROJECT
+    - Select "Create Credentials" > OAuth client ID"
+    - select "Configure Consent Screen"
+    - fill in name
+    - IMPORTANT: Save "client ID" and "client secret" for use below
+    - Grab oauth2.py here
+      #+begin_example
+      git clone https://github.com/google/gmail-oauth2-tools
+      #+end_example
+    - run oauth2.py with client_id and client_secret from above   
+    #+begin_example
+    python/oauth2.py   --generate_oauth2_token  \
+                       --client_id=xxx.apps.googleusercontent.com \
+                       --client_secret=XXX
+    #+end_example
+
+    - Open the URL output to get a verification code
+    #+begin_example
+    To authorize token, visit this url and follow the directions:
+    https://accounts.google.com/o/oauth2/auth?client_id=XXX.apps.googleusercontent.com&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&scope=https%3A%2F%2Fmail.google.com%2F
+    #+end_example
+    - Paste in the verification code from the web page
+    #+begin_example
+    Enter verification code: PASTE-CODE-FROM-WEB-PAGE-HERE
+    #+end_example
+    - Save the Refresh and access tokens generated
+    #+begin_example
+    Refresh Token: XXX-SAVE-TEHSE
+    Access Token: XXX-SAVE-THESE
+    Access Token Expiration Seconds: 3600
+    #+end_example
+
+*** Create a ~/.offlineimaprc file to read GMAIL
+
+    Add the apprpriate client_id, secrete and token from above
+    Mine currently looks like this:
+
+    #+begin_example
+#+begin_example
+# Sample minimal config file.  Copy this to ~/.offlineimaprc and edit to
+# get started fast.
+
+[general]
+accounts = Fooologist
+ii = ttyui
+
+[Account Fooologist]
+localrepository = FooologistLocal
+remoterepository = FooologistRemote
+
+[Repository FooologistLocal]
+type = Maildir
+localfolders = ~/Mail/Fooologist
+
+[Repository FooologistRemote]
+#
+# Who are they?
+#
+type = Gmail
+# cert_fingerprint added by hand after first --dry-run
+cert_fingerprint = bbaf4b833c7b0ffde4eb46941342bc3c361c6a39
+
+#
+# Who are we ?
+#
+remoteuser = fooologist@gmail.com
+auth_mechanisms = XOAUTH2
+#oauth2_access_token = XXX
+#oauth2_request_url = https://accounts.google.com/o/oauth2/token
+oauth2_client_id = XXX
+oauth2_client_secret = XXX
+oauth2_refresh_token = XXX
+
+#
+# What folders do we want to sync?
+#
+folderfilter = lambda foldername: re.search('(^2016$|2015)', foldername)
+#+end_example
+    
+#
+# What folders do we want to sync?
+#
+folderfilter = lambda foldername: re.search('(^2016$|2015)', foldername)
+    #+end_example
+
+*** Sort mail into bit-size folders on server before syncing
+**** Problem: Lots of mail, slow, large
+     I have a lot of mail in my online repositories, it will be large and take a long time to sync
+**** Solution: use maxage
+     maxage is supposed to limit downloads by absolute date or
+     relative age in days
+**** Problem: maxage is not supported (at least in my use case)
+     http://www.offlineimap.org/devel/2015/04/14/why-we-changed-maxage.html
+**** Solution: Pre-sort mail on server side before downloading.
+     - For instance, sort all mail from 2016 into a folder called
+       "2016"
+     - You may want this to happen automatically for new mail too.
+**** Problem: GMAIL GUI does not let you filter by date
+**** Solution: search and label
+     - apply search strings such as "after:2014/12/31 -label:2016" and add labels such as "2015"
+     - this will create (hopefully) folder (from the IMAP view of the
+       world) called "2015" and such.
+
+
+*** Do a dry run
+    Consider using the =--dry-run= option the first time. You will get
+    errors if he local folders do not exist, but if you get past
+    "Establishing connection", it means at least auth is working
+
+    #+begin_example
+george@octo ~ $ offlineimap --dry-run -a eludom
+OfflineIMAP 7.0.0
+  Licensed under the GNU GPL v2 or any later version (with an OpenSSL exception)
+Account sync eludom:
+ *** Processing account eludom
+ Establishing connection to imap.gmail.com:993
+ [DRYRUN] Creating folder 2016[eludomLocal]    
+    #+end_example
+
+    
+*** Do the initial sync
+    #+begin_example
+george@octo securityfoo [master] $ offlineimap
+george@octo securityfoo [master] $ 
+OfflineIMAP 7.0.0
+  Licensed under the GNU GPL v2 or any later version (with an OpenSSL exception)
+... Processing account Fooologist
+Establishing connection to imap.gmail.com:993
+Creating folder 2015[FooologistLocal]
+Creating folder 2016[FooologistLocal]
+Creating new Local Status db for FooologistLocal:2015
+Syncing 2015: Gmail -> Maildir
+Creating new Local Status db for FooologistLocal:2016
+Syncing 2016: Gmail -> Maildir
+Copy message UID 1 (1/2364) FooologistRemote:2015 -> FooologistLocal
+Copy message UID 2 (2/2364) FooologistRemote:2015 -> FooologistLocal
+Copy message UID 3 (3/2364) FooologistRemote:2015 -> FooologistLocal
+Copy message UID 141 (1/1365) FooologistRemote:2016 -> FooologistLocal
+...
+Copy message UID 2363 (2363/2364) FooologistRemote:2015 -> FooologistLocal
+Copy message UID 2364 (2364/2364) FooologistRemote:2015 -> FooologistLocal
+...Finished account 'Fooologist' in 15:33
+george@octo securityfoo [master] $
+    #+end_example
+** Useful Links
+   - Basic .~/offlineimaprc example
+   - Advanced .~/offlineimaprc example
+   - Offlineimap .conf file that mentions OAuth2 :: https://github.com/OfflineIMAP/offlineimap/blob/master/offlineimap.conf
+   - Usable advice on creating OAuth2 tokens :: http://christop.club/2014/01/19/sup/
+   - https://gist.github.com/dabrahams/3030332
+

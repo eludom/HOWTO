@@ -1,0 +1,101 @@
+Now that I have offlineimap pulling down some mail, I'm going to try
+to follow the directions in https://notmuchmail.org/getting-started/ ...
+
+* Install
+#+begin_example
+$ sudo apt-get install notmuch
+#+end_example
+
+* Configure
+#+begin_example
+george@octo offlineimap [master] $ notmuch
+Welcome to notmuch!
+
+The goal of notmuch is to help you manage and search your collection of
+email, and to efficiently keep up with the flow of email as it comes in.
+
+Notmuch needs to know a few things about you such as your name and email
+address, as well as the directory that contains your email. This is where
+you already have mail stored and where messages will be delivered in the
+future. This directory can contain any number of sub-directories. Regular
+files in these directories should be individual email messages. If there
+are other, non-email files (such as indexes maintained by other email
+programs) then notmuch will do its best to detect those and ignore them.
+
+If you already have your email being delivered to directories in either
+maildir or mh format, then that's perfect. Mail storage that uses mbox
+format, (where one mbox file contains many messages), will not work with
+notmuch. If that's how your mail is currently stored, we recommend you
+first convert it to maildir format with a utility such as mb2md. You can
+continue configuring notmuch now, but be sure to complete the conversion
+before you run "notmuch new" for the first time.
+
+Your full name [George]: George Jones
+Your primary email address [george@octo.(none)]: fooologist@gmail.com
+Additional email address [Press 'Enter' if none]: 
+Top-level directory of your email archive [/home/george/mail]: /home/george/Mail/Fooologist
+Tags to apply to all new messages (separated by spaces) [unread inbox]: 
+Tags to exclude when searching messages (separated by spaces) [deleted spam]: 
+
+Notmuch is now configured, and the configuration settings are saved in
+a file in your home directory named .notmuch-config . If you'd like to
+change the configuration in the future, you can either edit that file
+directly or run "notmuch setup".  To choose an alternate configuration
+location, set ${NOTMUCH_CONFIG}.
+
+The next step is to run "notmuch new" which will create a database
+that indexes all of your mail. Depending on the amount of mail you have
+the initial indexing process can take a long time, so expect that.
+Also, the resulting database will require roughly the same amount of
+storage space as your current collection of email. So please ensure you
+have sufficient storage space available now.
+
+#+end_example
+
+* Build initial index
+  #+begin_example
+george@octo offlineimap [master] $ notmuch new
+Found 3729 total files (that's not much mail).
+Processed 3729 total files in 1m 12s (51 files/sec.).
+Added 3715 new messages to the database.
+george@octo offlineimap [master] $ 
+  #+end_example
+* Configure emacs interface
+
+  I had to add the following to my ~/.emacs.d/init.el (or equivalent)
+
+  #+begin_example
+  (add-to-list 'load-path "/usr/share/emacs/site-lisp/notmuch")
+  (require 'notmuch)
+  #+end_example
+* Run notmuch
+  #+begin_example
+  M-x notmuch 
+  #+end_example
+
+* Sending mail using different identities
+  - Problem, I'm reading mail from multiple IMAP accounts with the same notmuch database
+
+** Brute Force Solutions
+   1. Create separate logins for each user
+   2. Use different config files (.offlineimap, .notmuch-config) and
+      directories (~/Mail/account1, ~/Mail/account2)
+** Integrated Solution
+   1. gnus-alias in message-mode https://notmuchmail.org/emacstips/#index16h2
+   2. msmtp, message mode and multiple accounts https://notmuchmail.org/emacstips/#index11h2
+** Conclusion, looks like gnus-alias is going to be winner.
+   - Used by jwiegley (current maintainer of Emacs (author of eshell, etc)). His config is
+     here.
+     https://github.com/jwiegley/dot-emacs/blob/master/gnus-settings.el. Probably
+     good ideas.
+   - What version to install?  Authors version here
+     http://www.northbound-train.com/emacs.html. Last update 2003.
+     But maybe that's good enough for an add on to an Emacs ('70s)
+     Usenet News reader from the'80s (gnus)...
+   - And the winner is.... https://github.com/hexmode/gnus-alias which
+     seems to be maintained....
+* Useful references
+  - Screen Shots :: https://notmuchmail.org/screenshots/ show common
+       uses
+
+  - Some insightful startup :: http://danamlund.dk/ubuntu_setup_old_notmuch.html
