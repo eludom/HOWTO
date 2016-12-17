@@ -3,8 +3,8 @@
 #+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t
 #+OPTIONS: num:2 p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
-#+TITLE: offlineimap
-#+DATE: <2016-10-11 12:08:21 Tuesday>
+#+TITLE: Using OAuth wtih offlineimap to read and send gmail
+#+DATE: <2016-12-17 13:03:30 Saturday>
 #+AUTHOR: George M Jones
 #+EMAIL: gmj@pobox.com
 #+LANGUAGE: en
@@ -12,7 +12,14 @@
 #+EXCLUDE_TAGS: noexport
 #+CREATOR: Emacs 25.1.50.1 (Org mode 8.3.4)
 
-* Programming your mail with offlineimap and OAuth2
+* The easy answer - Don't Use OAuth
+  To (re)enable the use of OAuth for gmail (sending and receiving),
+  log in to your gmail account using your favorite web browser, then
+  go here https://www.google.com/settings/security/lesssecureapps 
+  and click the "turn on" for "access for less secure apps"
+* Downloading Gmail with offlineimap and OAuth2
+  This is harder than it needs to be.
+
   So, I thought I'd give [[https://notmuchmail.org/][notmuchmail]] a quick try this
   morning because a) my mail is getting slow b) it's been a long time
   since I hacked my email setup and c) it is clear that search
@@ -30,59 +37,47 @@
    versions of myself...
 *** Install offline IMAP
     Build and install from source to get OAuth2 support (apt-get
-    version in Ubuntu archives did not have it as of <2016-07-23 Sat>)
+    version in Ubuntu archives did not have it as of
+    <2016-07-23 Sat>).  As of <2016-12-17> there were still recent
+    patches in the offlineimap github repo related to OAuth2 and
+    gmail, so I think using the latest source version is still wise.
 
-    Git the latest source.
+**** Git the latest source.
 
     #+begin_example
     git clone https://github.com/OfflineIMAP/offlineimap.git
     #+end_example
 
-    Make sure it has OAuth support
+**** pip install six
 
-    #+begin_example
-    find offlineimap -exec grep -i oauth \{\} \; |& grep -v directory |  head
+    I had to
 
-- offlineimap.conf: XOAUTH2: expose and document the oauth2_request_url option. [Nicolas Sebrecht]
-- offlineimap.conf: improve documentation for oauth2. [Nicolas Sebrecht]
-- XOAUTH2: don't force oauth2_request_url to be defined. [Nicolas Sebrecht]
-- XOAUTH2: raise error when oauth_request_url is missing for IMAP type. [Nicolas Sebrecht]
-Some bugs got fixed. XOAUTH2 now honors the proxy configuration option.  Error
-- XOAUTH2 handler: urlopen with proxied socket.
-- Allow authorization via XOAUTH2 using access token.
-- Declare XOAUTH2 stable.
-- Support for XOAUTH2;
-- Learn XOAUTH2 authentication (used by Gmail servers).
-   #+end_example
+    =pip install six=
 
-   Build
+    to make the latest github version (7.0.12, <2016-12-17>) install.
 
-   #+begin_example
-    cd offlineimap/
-    make
-    sudo python setup.py install
-    hash -r # to get rid of path to old version
-    /usr/local/bin/offlineimap --version
-    7.0.0
-   #+end_example 
 
 *** Create Google ClientID and Secret for use generating OAuth tokens
     Mostly per instructions here http://christop.club/2014/01/19/sup/, 
 
+**** Create A Project
     - Go to the Google Developers Console
       https://console.cloud.google.com/
     - Create a new project, make note of name
+**** Create Credentials
     - Go to the API console
       https://console.cloud.google.com/apis/dashboard?project=YOURPROJECT
     - Select "Create Credentials" > OAuth client ID"
-    - select "Configure Consent Screen"
-    - fill in name
+      + Select "Application Type 'other'"
+    - fill in name, e.g. "offlineimap""
     - IMPORTANT: Save "client ID" and "client secret" for use below
-    - Grab oauth2.py here
+**** Grab oauth2.py here
       #+begin_example
       git clone https://github.com/google/gmail-oauth2-tools
       #+end_example
-    - run oauth2.py with client_id and client_secret from above   
+
+**** Generate an access token
+***** run oauth2.py with client_id and client_secret from above   
     #+begin_example
     python/oauth2.py   --generate_oauth2_token  \
                        --client_id=xxx.apps.googleusercontent.com \
@@ -104,9 +99,7 @@ Some bugs got fixed. XOAUTH2 now honors the proxy configuration option.  Error
     Access Token: XXX-SAVE-THESE
     Access Token Expiration Seconds: 3600
     #+end_example
-
-*** Create a ~/.offlineimaprc file to read GMAIL
-
+** Create and ~/.offlineimaprc file for GMAIL
     Add the apprpriate client_id, secrete and token from above
     Mine currently looks like this:
 
@@ -224,3 +217,9 @@ george@octo securityfoo [master] $
    - Usable advice on creating OAuth2 tokens :: http://christop.club/2014/01/19/sup/
    - https://gist.github.com/dabrahams/3030332
 
+* Sending Gmail with OAuth 2
+  This is, at the moment <2016-12-17> and unsolved problem/work in
+  progress.
+
+  I am trying to figure out how to to convince message mode in emacs
+  (smtpmail-send-it) to use OAuth for sending.
