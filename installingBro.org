@@ -3,8 +3,8 @@
 #+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:2
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
-#+TITLE: Installing Bro on Ubuntu 16.04
-#+DATE: <2017-01-14 14:20:57 Saturday>
+#+TITLE: Installing Bro on Ubuntu 16.04 and Initial Use
+#+DATE: <2017-01-14 17:14:15 Saturday>
 #+AUTHOR: George Jones
 #+EMAIL: eludom@gmail.com
 #+LANGUAGE: en
@@ -13,11 +13,14 @@
 #+CREATOR: Emacs 26.0.50.1 (Org mode 9.0.2)
 
 * What Is This?
-  These are my notes from installing and learning Bro.
+  These are my notes from installing and learning Bro.  What's here is
+  mostly "how", e.g. the steps I executed.
 
   These are both notes-to-self in case I want to repeat these
   processes later and notes to anyone else who wants a fairly
   step-by-step process.
+
+
 
   - what :: installing bro on Unbutu 16.04
   - why :: learning bro, from the ground up.
@@ -46,18 +49,18 @@
   #+end_example
 
 * DONE compile bro
-   This takes a while...
+  This takes a while...
 
-   #+begin_example
+  #+begin_example
    cd ~/src/bro
    ./configure 
    make
-   #+end_example
+  #+end_example
 
 * DONE install bro
-   #+begin_example
+  #+begin_example
    sudo make install
-   #+end_example
+  #+end_example
 * DONE configure bro
 ** Set up the path
    Put this somewhere where it will get executed
@@ -68,8 +71,8 @@
    May want to add to /etc/environment and/or other places
 
 ** Set up postfix for local delivery
-     Not sure all this is right/necessary, but mail delivers now
-     #+begin_example
+   Not sure all this is right/necessary, but mail delivers now
+   #+begin_example
      sudo apt-get install --reinstall postfix     
      sudo cp /usr/share/postfix/main.cf.debian /etc/postfix/main.cf
      sudo cat << END > /etc/aliases
@@ -83,7 +86,7 @@ END
      george@ed bro [master] $ sudo systemctl restart postfix.service
 
 
-     #+end_example
+   #+end_example
 
 ** Edit config files
    In =/sudo:root@ed:/usr/local/bro/etc/node.cfg= I made the
@@ -97,31 +100,33 @@ END
    I took the defaults in broctl.cfg and networks.cfg
 
 * DONE Run broctl to install and start
-   #+begin_example
+  #+begin_example
    sudo bash
    export PATH=/usr/local/bro/bin:$PATH
    broctl
    [BroControl] > install
    [BroControl] > start
-   #+end_example
+  #+end_example
 * DONE Look at what's landing in the logs
-   Look at what's landing in the logs =/usr/local/bro/logs/current/=
-*** Example: conn.log#+begin_example - raw
-#separator \x09
-#set_separator	,
-#empty_field	(empty)
-#unset_field	-
-#path	conn
-#open	2017-01-14-08-14-00
-#fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	proto	service	duration	orig_bytes	resp_bytes	conn_state	local_orig	local_resp	missed_bytes	history	orig_pkts	orig_ip_bytes	resp_pkts	resp_ip_bytes	tunnel_parents
-#types	time	string	addr	port	addr	port	enum	string	interval	count	count	string	bool	bool	count	string	count	count	count	count	set[string]
-1484403228.025398	CJn7CC45hBZAGTU7Ej	192.168.86.105	55690	192.150.187.43	443	tcp	ssl	7.019289	929	66987	SF	T	F	0	ShADadtfF	55	4143	58	71502	(empty)
-1484403230.326955	CPJe2b2eytUnC2fKU7	192.168.86.105	55908	192.150.187.43	443	tcp	ssl	5.706497	668	6329	SF	T	F	0	ShADadtfF	13	1388	12	6961	(empty)
-#+end_example
-
-*** Example: conn.log#+begin_example - in columns via less
-     #+begin_example
-    cat conn.log | sed -e 's/\#fields//' -e 's/\#types//' | column -t | less -RS
+  Look at what's landing in the logs
+  =/usr/local/bro/logs/current/=
+*** Example: conn.log - raw 
+    #+begin_example
+    #separator \x09
+    #set_separator	,
+    #empty_field	(empty)
+    #unset_field	-
+    #path	conn
+    #open	2017-01-14-08-14-00
+    #fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	proto	service	duration	orig_bytes	resp_bytes	conn_state	local_orig	local_resp	missed_bytes	history	orig_pkts	orig_ip_bytes	resp_pkts	resp_ip_bytes	tunnel_parents
+    #types	time	string	addr	port	addr	port	enum	string	interval	count	count	string	bool	bool	count	string	count	count	count	count	set[string]
+    1484403228.025398	CJn7CC45hBZAGTU7Ej	192.168.86.105	55690	192.150.187.43	443	tcp	ssl	7.019289	929	66987	SF	T	F	0	ShADadtfF	55	4143	58	71502	(empty)
+    1484403230.326955	CPJe2b2eytUnC2fKU7	192.168.86.105	55908	192.150.187.43	443	tcp	ssl	5.706497	668	6329	SF	T	F	0	ShADadtfF	13	1388	12	6961	(empty)
+    #+end_example
+    
+*** Example: conn.log - in columns
+    #+begin_example
+cat conn.log | sed -e 's/\#fields//' -e 's/\#types//' | column -t | less -RS
 
 #separator         \x09
 #set_separator     ,
@@ -135,10 +140,10 @@ time               string               addr                       port       ad
 1484406002.273936  C4HGUk3oBXkhwMeK2j   192.168.86.105             60728      151.101.192.133      
 1484406002.274152  CAQqcv1c1E1lxPR53    192.168.86.105             60730      151.101.192.133      
 1484405955.263074  CLHD0c3Ewd4xTq1rpc   192.168.86.105             42809      216.58.217.142       
-     #+end_example
+    #+end_example
 
 *** Example: software.log - raw
-#+begin_example
+    #+begin_example
 #separator \x09
 #set_separator	,
 #empty_field	(empty)
@@ -148,21 +153,21 @@ time               string               addr                       port       ad
 #fields	ts	host	host_p	software_type	name	version.major	version.minor	version.minor2	version.minor3	version.addl	unparsed_version
 #types	time	addr	port	enum	string	count	count	count	count	string	string
 1484403394.069088	192.168.86.105	-	HTTP::BROWSER	URL/Emacs Emacs	26	0	50	1	X11	URL/Emacs Emacs/26.0.50.1 (X11; x86_64-pc-linux-gnu)
-#+end_example
+    #+end_example
 
 * DONE Make sure it bro restarts if it dies
-   https://www.bro.org/sphinx/components/broctl/README.html#id8
+  https://www.bro.org/sphinx/components/broctl/README.html#id8
 
-   suggests the following cron entry
+  suggests the following cron entry
 
-   #+begin_example
+  #+begin_example
    */5 * * * * /usr/local/bro/bin/broctl cron    
-   #+end_example
+  #+end_example
 
-   which restarts bro if =broctl status= reports "crashed"
+  which restarts bro if =broctl status= reports "crashed"
 
 * DONE Some useful bash setup
-    #+begin_example
+  #+begin_example
 # Set up default bro path
 # May want to add to /etc/environment and/or other places
 export PATH=/usr/local/bro/bin:$PATH
@@ -174,25 +179,151 @@ broLessFunc() {
   cat $1 | sed -e 's/\#fields//' -e 's/\#types//' | column -t | less -RS
 }  
 alias bl=broLessFunc
-    #+end_example
+  #+end_example
 
-which enables things like
+  which enables things like
 
-#+begin_example
+  #+begin_example
 bl conn.log
-#+end_example
+  #+end_example
 
-to see the connection log and 
+  to see the connection log and 
 
-#+begin_example
+  #+begin_example
 conn.log | egrep icmp\|\#  | bl 
-#+end_example
+  #+end_example
 
-to see only ICMP.  This the start of a poor man's [[https://tools.netsa.cert.org/silk/rwfilter.html][rwfilter]]
+  to see only ICMP.  This the start of a poor man's [[https://tools.netsa.cert.org/silk/rwfilter.html][rwfilter]]
+
+* Collect more stuff
+** DONE Modify local.bro
+   #+begin_example
 
 
-* TODO Some Possible Next Steps
-** Tweak Collection
+diff --git a/local.bro b/local.bro
+index 9f8be4b..a152da4 100644
+--- a/local.bro
++++ b/local.bro
+@@ -41,7 +41,7 @@
+ @load protocols/http/software
+ # The detect-webapps script could possibly cause performance trouble when
+ # running on live traffic.  Enable it cautiously.
+-#@load protocols/http/detect-webapps
++@load protocols/http/detect-webapps
+ 
+ # This script detects DNS results pointing toward your Site::local_nets
+ # where the name is not part of your local DNS zone and is being hosted
+@@ -64,7 +64,7 @@
+ 
+ # Uncomment the following line to check each SSL certificate hash against the ICSI
+ # certificate notary service; see http://notary.icsi.berkeley.edu .
+-# @load protocols/ssl/notary
++@load protocols/ssl/notary
+ 
+ # If you have libGeoIP support built in, do some geographic detections and
+ # logging for SSH traffic.
+@@ -95,8 +95,18 @@
+ 
+ # Uncomment the following line to enable logging of link-layer addresses. Enabling
+ # this adds the link-layer address for each connection endpoint to the conn.log file.
+-# @load policy/protocols/conn/mac-logging
++@load policy/protocols/conn/mac-logging
+ 
+ # Uncomment the following line to enable the SMB analyzer.  The analyzer
+ # is currently considered a preview and therefore not loaded by default.
+ # @load policy/protocols/smb
++
++
++#
++# gmj. Added from examples
++#
++
++redef Notice::ignored_types += { SSL::Invalid_Server_Cert };
++
++
++
+
+   #+end_example
+** DONE add share/bro/site/conditional-notice.bro
+   #+begin_example
+   #
+# gmj. Added from examples
+#
+  
+@load protocols/ssl/expiring-certs  
+   
+const watched_servers: set[addr] = {  
+	87.98.220.10,  
+} &redef;  
+  
+# Site::local_nets usually isn't something you need to modify if  
+# BroControl automatically sets it up from networks.cfg.  It's  
+# shown here for completeness.  
+redef Site::local_nets += {  
+	87.98.0.0/16,  
+};  
+  
+hook Notice::policy(n: Notice::Info)  
+	{  
+	if ( n$note != SSL::Certificate_Expired )  
+  		return;  
+    
+  	if ( n$id$resp_h !in watched_servers )  
+  		return;  
+ 
+  	add n$actions[Notice::ACTION_EMAIL];  
+  	}  
+
+   #+end_example
+** restart
+   #+begin_example
+   [BroControl] > install   
+   #+end_example
+* Collect modified traffic with the new configs and look at it
+** DONE Look for expired certificates in notice.log
+   =zcat notice.13\:37\:18-14\:00\:00.log.gz=
+   #+begin_example
+/usr/local/bro/logs/2017-01-14
+#separator \x09
+#set_separator	,
+#empty_field	(empty)
+#unset_field	-
+#path	notice
+#open	2017-01-14-13-37-18
+#fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	fuid	file_mime_type	file_desc	proto	note	msg	sub	src	dst	p	n	peer_descr	actions	suppress_for	dropped	remote_location.country_code	remote_location.region	remote_location.city	remote_location.latitude	remote_location.longitude
+#types	time	string	addr	port	addr	port	string	string	string	enum	enum	string	string	addr	addr	port	count	string	set[enum]	interval	bool	string	string	string	double	double
+1484419038.991767	CYxRSy1s6mZjCbJcj3	192.168.86.105	60498	50.116.194.28	443	-	-	-	tcp	SSL::Invalid_Server_Cert	SSL certificate validation failed with (certificate has expired)	CN=*.audienceiq.com,O=Experian PLC,L=Costa Mesa,ST=California,C=US	192.168.86.105	50.116.194.28	443	-	bro	Notice::ACTION_LOG	3600.000000	F	-	-	-	-	-
+#close	2017-01-14-14-00-00
+   #+end_example
+** DONE Capture some traffic
+   cd ~/analysis
+   #+begin_example
+   sudo tcpdump -i wlo1 -w foo.pcap   
+   #+end_example
+   then feed the IP address to the web browser to generate some
+   traffic and =^C= to stop.
+** DONE Feed the pcap to bro
+   #+begin_example
+   bro -r foo.pcap conditional-notice.bro
+   #+end_example
+** DONE Look at the log files generated in the directory
+   #+begin_example
+   george@ed analysis [master] $ ls -lt
+total 2696
+-rw-r--r--  1 george george   10601 Jan 14 16:08 dns.log
+-rw-r--r--  1 george george   14118 Jan 14 16:08 http.log
+-rw-r--r--  1 george george    9188 Jan 14 16:08 conn.log
+-rw-r--r--  1 george george    6630 Jan 14 16:08 files.log
+-rw-r--r--  1 george george     253 Jan 14 16:08 packet_filter.log
+-rw-r--r--  1 george george    1636 Jan 14 16:08 ssl.log
+-rw-r--r--  1 george george     746 Jan 14 16:08 weird.log
+-rw-r--r--  1 george george    2731 Jan 14 16:08 x509.log
+drwx------  3 george george    4096 Jan 14 16:08 .state
+drwxr-xr-x  4 george george    4096 Jan 14 16:08 .
+drwxr-xr-x  2 george george    4096 Jan 14 16:07 old
+   #+end_example
+* Some Possible Next Steps*
+** DONE Tweak Collection
    - "collect all the things"
 ** Let it run for a couple of days
 ** Look at the raw data to get a feel for it
