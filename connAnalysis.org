@@ -4,7 +4,7 @@
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
 #+TITLE: Bro connection log analysis with SQLite
-#+DATE: <2017-01-15 16:04:51 Sunday>
+#+DATE: <2017-01-15 16:33:58 Sunday>
 #+AUTHOR: George Jones
 #+EMAIL: eludom@gmail.com
 #+LANGUAGE: en
@@ -12,7 +12,7 @@
 #+EXCLUDE_TAGS: noexport
 #+CREATOR: Emacs 26.0.50.1 (Org mode 9.0.2)
 
-* Bro connection log analysis with SQLite
+* What is this?
   - Why :: Learning
   - Who :: George Jones <gmj@pobox.com>
   - When :: <2017-01-15>
