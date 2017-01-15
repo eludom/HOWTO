@@ -1,0 +1,234 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:2
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+#+TITLE: Bro connection log analysis with SQLite
+#+DATE: <2017-01-15 16:04:51 Sunday>
+#+AUTHOR: George Jones
+#+EMAIL: eludom@gmail.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.0.50.1 (Org mode 9.0.2)
+
+* Bro connection log analysis with SQLite
+  - Why :: Learning
+  - Who :: George Jones <gmj@pobox.com>
+  - When :: <2017-01-15>
+  - Where :: Ubuntu 16.04 laptop with base bro install
+* Setup
+** Install sqlite3 support in bro
+   #+begin_example
+   $ sudo apt-get install sqlite3        
+   $ sudo apt-get install libsqlite3-dev
+   $ cd ~/src/bro
+   $ make clean
+   $ make
+   $ sudo broctl
+   [BroControl] > stop
+   make install
+   #+end_example
+** Enable sqlite    logging of connections in local.bro
+    #+begin_example
+event bro_init()  
+    {  
+    local filter: Log::Filter =  
+        [  
+        $name="sqlite",  
+        $path="/var/db/conn",  
+        $config=table(["tablename"] = "conn"),  
+        $writer=Log::WRITER_SQLITE  
+        ];  
+      
+     Log::add_filter(Conn::LOG, filter);  
+    }  
+    #+end_example
+** Deploy and restart
+   #+begin_example
+   $ sudo broctl
+   [BroControl] > stop   
+   #+end_example
+* Summary Queries
+** Raw sample of conn log
+   #+begin_src shell  :results raw :exports both
+        exec 2>&1;set -e; set -u; set +x
+cat << "END" > query.sql
+.header on
+select *
+  from conn
+  limit 10;
+END
+sqlite3 /var/db/conn.sqlite -init query.sql    | \
+   sed 2i'-' | \
+   sed 's/^/|/' ||  true 
+   #+end_src
+
+   #+RESULTS:
+   |               ts | uid                |                 id.orig_h | id.orig_p |                 id.resp_h | id.resp_p | proto | service |             duration | orig_bytes | resp_bytes | conn_state | local_orig | local_resp | missed_bytes | history   | orig_pkts | orig_ip_bytes | resp_pkts | resp_ip_bytes | tunnel_parents |
+   |------------------+--------------------+---------------------------+-----------+---------------------------+-----------+-------+---------+----------------------+------------+------------+------------+------------+------------+--------------+-----------+-----------+---------------+-----------+---------------+----------------|
+   | 1484501361.99727 | CRu4172Ne1F21pFxl7 |            192.168.86.105 |     60090 |             23.21.224.150 |        80 | tcp   | http    |    0.214453935623169 |        132 |        379 | SF         |          1 |          0 |            0 | ShADadFf  |         6 |           452 |         4 |           595 | (empty)        |
+   | 1484501362.11111 | CbOT684E73cUGhTVxb |            192.168.86.105 |     39298 |             23.21.214.238 |        80 | tcp   | http    |    0.103883028030396 |        136 |       4475 | SF         |          1 |          0 |            0 | ShADadtFf |        10 |           712 |         8 |          6347 | (empty)        |
+   | 1484501361.96315 | CrRoEo41vBuldgkMjb |            192.168.86.105 |     49010 |              192.168.86.1 |        53 | udp   | dns     |    0.146271944046021 |        215 |        300 | SF         |          1 |          1 |            0 | Dd        |         3 |           299 |         3 |           384 | (empty)        |
+   | 1484501332.40638 | C8CpTd4NXNlsU5DHMf | fe80::46d2:44ff:fe5e:ff4e |       135 | fe80::60f9:1123:e071:d508 |       136 | icmp  |         | 8.32080841064453e-05 |         24 |         16 | OTH        |          0 |          0 |            0 |           |         1 |            72 |         1 |            64 | (empty)        |
+   |  1484501353.4043 | CN1RfZ3wfMqK13qCCb |            192.168.86.102 |     64554 |            192.168.86.255 |      8612 | udp   |         |                      |            |            | S0         |          1 |          1 |            0 | D         |         1 |            44 |         0 |             0 | (empty)        |
+   | 1484501353.40534 | CnE17G3rZ9xFiVj1mj |            192.168.86.102 |     55721 |                 224.0.0.1 |      8612 | udp   |         |                      |            |            | S0         |          1 |          0 |            0 | D         |         1 |            44 |         0 |             0 | (empty)        |
+   | 1484501366.51257 | Cl6W871YeqhftBk3xc |            192.168.86.200 |     48160 |           239.255.255.250 |      1900 | udp   |         |                      |            |            | S0         |          1 |          0 |            0 | D         |         1 |           153 |         0 |             0 | (empty)        |
+   | 1484501433.69077 | C8TXZ11MHVlDQZAPpk |            192.168.86.105 |     49010 |              192.168.86.1 |        53 | udp   | dns     |     0.60005784034729 |        212 |        308 | SF         |          1 |          1 |            0 | Dd        |         3 |           296 |         3 |           392 | (empty)        |
+   | 1484501433.89287 | Ct9jcs1Re0hd23JZv4 |            192.168.86.200 |      5353 |               224.0.0.251 |      5353 | udp   | dns     |                      |            |            | S0         |          1 |          0 |            0 | D         |         1 |           105 |         0 |             0 | (empty)        |
+   | 1484501433.75607 | CrVCKK8lGVH3rZJci  |            192.168.86.105 |     34982 |            192.150.187.43 |       443 | tcp   | ssl     |     5.66959309577942 |        704 |      13196 | SF         |          1 |          0 |            0 | ShADadtfF |        20 |          1812 |        18 |         15588 | (empty)        |
+
+
+
+
+
+
+
+  
+
+
+** Who are the senders, by bytes?
+   #+begin_src shell  :results raw :exports both
+        exec 2>&1;set -e; set -u; set +x
+cat << "END" > query.sql
+.header on
+select `id.orig_h` as orig_h,sum(orig_bytes) as orig_bytes
+  from conn
+  group by `id.orig_h`
+  order by orig_bytes desc
+  limit 10;
+END
+sqlite3 /var/db/conn.sqlite -init query.sql    | \
+   sed 2i'-' | \
+   sed 's/^/|/' ||  true 
+   #+end_src
+
+   #+RESULTS:
+   |                    orig_h | orig_bytes |
+   |---------------------------+------------|
+   |            192.168.86.105 |     591783 |
+   |              192.168.86.1 |     192035 |
+   |            192.168.86.106 |      61537 |
+   |            192.168.86.200 |      31913 |
+   | fe80::60f9:1123:e071:d508 |      12966 |
+   |            192.168.86.198 |       2538 |
+   | fe80::e0b6:a28d:6a6e:31cf |       2179 |
+   |   fe80::1c77:a73f:2e:847b |       2130 |
+   |            192.168.86.197 |       2021 |
+   | fe80::3623:baff:fe5d:9821 |         24 |
+
+** Who are the top respondors, by bytes?
+   #+begin_src shell  :results raw :exports both
+        exec 2>&1;set -e; set -u; set +x
+cat << "END" > query.sql
+.header on
+select `id.resp_h` as resp_h,sum(resp_bytes) as resp_bytes
+  from conn
+  group by `id.resp_h`
+  order by resp_bytes desc
+  limit 10;
+END
+sqlite3 /var/db/conn.sqlite -init query.sql    | \
+   sed 2i'-' | \
+   sed 's/^/|/' ||  true 
+   #+end_src
+
+   #+RESULTS:
+   |          resp_h | resp_bytes |
+   |-----------------+------------|
+   |  216.58.217.132 |     571043 |
+   |  192.150.187.43 |     343575 |
+   |      192.0.73.2 |     248588 |
+   |  216.58.217.142 |     235708 |
+   |    151.101.1.69 |     194474 |
+   |  216.58.217.131 |     172174 |
+   | 173.230.141.151 |     133388 |
+   |    104.25.99.16 |      81326 |
+   |  192.150.186.11 |      64864 |
+   |   104.16.108.18 |      63088 |
+
+
+
+  
+
+
+** What are the top services requested, by orig, then bytes
+   #+begin_src shell  :results raw :exports both
+        exec 2>&1;set -e; set -u; set +x
+cat << "END" > query.sql
+.header on
+select `id.orig_h` as orig_h,`id.resp_p` as resp_p, proto, sum(orig_bytes) as orig_bytes
+  from conn
+  group by `id.orig_h`,resp_p,proto
+  order by orig_h,orig_bytes desc
+  limit 20;
+END
+sqlite3 /var/db/conn.sqlite -init query.sql    | \
+   sed 2i'-' | \
+   sed 's/^/|/' ||  true 
+   #+end_src
+
+   #+RESULTS:
+   |         orig_h | resp_p | proto | orig_bytes |
+   |----------------+--------+-------+------------|
+   |   192.168.86.1 |   1900 | udp   |     245068 |
+   |   192.168.86.1 |   3517 | udp   |        496 |
+   |   192.168.86.1 |   5353 | udp   |        270 |
+   |   192.168.86.1 |      0 | icmp  |        120 |
+   | 192.168.86.101 |   5353 | udp   |            |
+   | 192.168.86.102 |   5353 | udp   |        257 |
+   | 192.168.86.102 |    137 | udp   |            |
+   | 192.168.86.102 |   8612 | udp   |            |
+   | 192.168.86.105 |    443 | udp   |     391103 |
+   | 192.168.86.105 |    443 | tcp   |     177838 |
+   | 192.168.86.105 |   1900 | udp   |      80712 |
+   | 192.168.86.105 |     53 | udp   |      18219 |
+   | 192.168.86.105 |     80 | tcp   |      12510 |
+   | 192.168.86.105 |   5353 | udp   |      11650 |
+   | 192.168.86.105 |   5355 | udp   |       3210 |
+   | 192.168.86.105 |      3 | icmp  |       3055 |
+   | 192.168.86.105 |   6667 | tcp   |        646 |
+   | 192.168.86.105 |    123 | udp   |        576 |
+   | 192.168.86.105 |   5355 | tcp   |            |
+   | 192.168.86.106 |   1900 | udp   |      67626 |
+
+** And What's Up with that IPv6 trafic?
+   #+begin_src shell  :results raw :exports both
+        exec 2>&1;set -e; set -u; set +x
+cat << "END" > query.sql
+.header on
+select `id.orig_h` as orig_h,`id.resp_p` as resp_p, proto, sum(orig_bytes) as orig_bytes, sum(resp_bytes) as resp_bytes
+  from conn
+  where orig_h like '%:%'
+  group by `id.orig_h`,resp_p,proto
+  order by orig_h,orig_bytes desc
+  limit 20;
+END
+sqlite3 /var/db/conn.sqlite -init query.sql    | \
+   sed 2i'-' | \
+   sed 's/^/|/' ||  true 
+   #+end_src
+
+   #+RESULTS:
+   | orig_h                    | resp_p | proto | orig_bytes | resp_bytes |
+   |---------------------------+--------+-------+------------+------------|
+   | ::                        |    136 | icmp  |            |            |
+   | fe80::1c77:a73f:2e:847b   |   5353 | udp   |       4615 |          0 |
+   | fe80::1c77:a73f:2e:847b   |    136 | icmp  |         48 |         32 |
+   | fe80::1c77:a73f:2e:847b   |      0 | icmp  |            |            |
+   | fe80::1c77:a73f:2e:847b   |    135 | icmp  |            |            |
+   | fe80::3623:baff:fe5d:9821 |    134 | icmp  |         24 |          0 |
+   | fe80::46d2:44ff:fe5e:ff4e |    136 | icmp  |         24 |         16 |
+   | fe80::46d2:44ff:fe5e:ff4e |   5353 | udp   |            |            |
+   | fe80::60f9:1123:e071:d508 |   5353 | udp   |      12130 |          0 |
+   | fe80::60f9:1123:e071:d508 |   5355 | udp   |       3060 |          0 |
+   | fe80::60f9:1123:e071:d508 |      0 | icmp  |       2000 |          0 |
+   | fe80::60f9:1123:e071:d508 |    136 | icmp  |         96 |         40 |
+   | fe80::60f9:1123:e071:d508 |   5355 | tcp   |          0 |          0 |
+   | fe80::e0b6:a28d:6a6e:31cf |   1900 | udp   |       4404 |          0 |
+   | fe80::e0b6:a28d:6a6e:31cf |    547 | udp   |        602 |          0 |
+   | fe80::e0b6:a28d:6a6e:31cf |    136 | icmp  |         48 |         32 |
+   | fe80::e0b6:a28d:6a6e:31cf |    134 | icmp  |         32 |          0 |
+   | fe80::e0b6:a28d:6a6e:31cf |      0 | icmp  |            |            |
+   | fe80::e0b6:a28d:6a6e:31cf |    135 | icmp  |            |            |
+   | fe80::e0b6:a28d:6a6e:31cf |   5355 | udp   |            |            |
