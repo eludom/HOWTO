@@ -18,17 +18,8 @@
   - When :: <2017-01-15>
   - Where :: Ubuntu 16.04 laptop with base bro install
 * Setup
-** Install sqlite3 support in bro
-   #+begin_example
-   $ sudo apt-get install sqlite3        
-   $ sudo apt-get install libsqlite3-dev
-   $ cd ~/src/bro
-   $ make clean
-   $ make
-   $ sudo broctl
-   [BroControl] > stop
-   make install
-   #+end_example
+** Create /var/db
+   =sudo  mkidr /var/db=
 ** Enable sqlite    logging of connections in local.bro
     #+begin_example
 event bro_init()  
@@ -47,7 +38,19 @@ event bro_init()
 ** Deploy and restart
    #+begin_example
    $ sudo broctl
-   [BroControl] > stop   
+   [BroControl] > deploy
+   #+end_example
+* Test DB deploy
+  Generate some traffic and see if the db file is showing up
+  #+BEGIN_EXAMPLE
+  $ cd /tmp
+  $ wget formtek.com
+  $ ls /var/db
+conn.sqlite  
+  #+END_EXAMPLE
+* Now install SQLite so we can query the records
+   #+begin_example
+   $ sudo apt-get install sqlite3        
    #+end_example
 * Summary Queries
 ** Raw sample of conn log

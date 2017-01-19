@@ -4,7 +4,7 @@
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
 #+TITLE: Installing Bro on Ubuntu 16.04 and Initial Use
-#+DATE: <2017-01-14 17:14:15 Saturday>
+#+DATE: <2017-01-18 19:05:13 Wednesday>
 #+AUTHOR: George Jones
 #+EMAIL: eludom@gmail.com
 #+LANGUAGE: en
@@ -30,15 +30,21 @@
   - how :: Steps I Mostly following this https://www.bro.org/sphinx/install/install.html and documenting the  steps
 
 * DONE Install bro prereqs and optional geoip lib
-  #+begin_example
-  sudo apt-get install cmake make gcc g++ flex bison libpcap-dev libssl-dev python-dev swig zlib1g-dev
-  #+end_example
+
+  #+begin_src shell  :results output :exports both
+  exec 2>&1;date;set -e; set -u; set -x
+  sudo apt-get install cmake make gcc g++ flex bison libpcap-dev libssl-dev python-dev swig zlib1g-dev  
+  #+end_src
 
   #+begin_example
   sudo apt-get install libgeoip-dev
   wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
   gunzip GeoLiteCity.dat.gz
   sudo  mv GeoLiteCity.dat /usr/share/GeoIP/
+
+  # this may be cheating and may or may not work
+  cd /usr/share/GeoIP
+  ln -s GeoLiteCity.dat GeoIPCity.dat
   #+end_example
 
 * DONE Get the latest bro source
@@ -68,33 +74,18 @@
    export PATH=/usr/local/bro/bin:$PATH
    #+end_example
 
-   May want to add to /etc/environment and/or other places
+   May want to add to /etc/environment and/or other places then =$ source /etc/env=
 
-** Set up postfix for local delivery
-   Not sure all this is right/necessary, but mail delivers now
-   #+begin_example
-     sudo apt-get install --reinstall postfix     
-     sudo cp /usr/share/postfix/main.cf.debian /etc/postfix/main.cf
-     sudo cat << END > /etc/aliases
-postmaster:    root
-root:	       george
-ggeorge:	       george
-END
-     sudo newaliases     
-     sudo systemctl enable postfix.service
-     sudo systemctl daemon-reload
-     george@ed bro [master] $ sudo systemctl restart postfix.service
-
-
-   #+end_example
-
+** Set up postfix for local deliverys
+   Mail needs to delivery locally for notifications.  See:
+   https://help.ubuntu.com/community/PostfixBasicSetupHowto
 ** Edit config files
-   In =/sudo:root@ed:/usr/local/bro/etc/node.cfg= I made the
+   In =/sudo::/usr/local/bro/etc/node.cfg= I made the
    following changes to listen to the local wireless interface:
 
    #+begin_example
-   #interface=eth0
-   interface=wlo1
+   #interface=eth0  # you may use this under normal curcumstances
+   interface=wlo1   # capturing Ubuntu wireless interface
    #+end_example
 
    I took the defaults in broctl.cfg and networks.cfg
@@ -110,7 +101,8 @@ END
 * DONE Look at what's landing in the logs
   Look at what's landing in the logs
   =/usr/local/bro/logs/current/=
-*** Example: conn.log - raw 
+  
+** Example Log: conn.log - raw 
     #+begin_example
     #separator \x09
     #set_separator	,
@@ -124,7 +116,7 @@ END
     1484403230.326955	CPJe2b2eytUnC2fKU7	192.168.86.105	55908	192.150.187.43	443	tcp	ssl	5.706497	668	6329	SF	T	F	0	ShADadtfF	13	1388	12	6961	(empty)
     #+end_example
     
-*** Example: conn.log - in columns
+** Example Log: conn.log - in columns
     #+begin_example
 cat conn.log | sed -e 's/\#fields//' -e 's/\#types//' | column -t | less -RS
 
@@ -142,7 +134,7 @@ time               string               addr                       port       ad
 1484405955.263074  CLHD0c3Ewd4xTq1rpc   192.168.86.105             42809      216.58.217.142       
     #+end_example
 
-*** Example: software.log - raw
+** Example Log: software.log - raw
     #+begin_example
 #separator \x09
 #set_separator	,
@@ -155,6 +147,31 @@ time               string               addr                       port       ad
 1484403394.069088	192.168.86.105	-	HTTP::BROWSER	URL/Emacs Emacs	26	0	50	1	X11	URL/Emacs Emacs/26.0.50.1 (X11; x86_64-pc-linux-gnu)
     #+end_example
 
+** If You Are Not Seeing Logs
+   if =/usr/local/bro/logs/current/reporter.log= says something like
+
+   #+BEGIN_EXAMPLE
+   1484701385.270433	Reporter::WARNING	Your interface is likely receiving invalid TCP checksums, most likely from NIC checksum offloading.  By default, packets with invalid checksums are discarded by Bro unless using the -C command-line option or toggling the 'ignore_checksums' variable.  Alternatively, disable checksum offloading by the network adapter to ensure Bro analyzes the actual checksums that are transmitted.	/usr/local/bro/share/bro/base/misc/find-checksum-offloading.bro, line 54
+   #+END_EXAMPLE
+
+   Try adding
+   
+   #+BEGIN_EXAMPLE
+   # ignore bad checksums
+   redef ignore_checksums = T;
+   #+END_EXAMPLE
+
+   To =/usr/local/bro/share/bro/site/local.bro= and restarting
+
+   #+BEGIN_EXAMPLE
+   [BroControl] > deploy   
+   #+END_EXAMPLE
+
+** Try generating some traffic and then look at the logs again
+   #+BEGIN_EXAMPLE
+   cd /tmp
+   wget www.compuserve.com
+   #+END_EXAMPLE
 * DONE Make sure it bro restarts if it dies
   https://www.bro.org/sphinx/components/broctl/README.html#id8
 
@@ -322,9 +339,21 @@ drwx------  3 george george    4096 Jan 14 16:08 .state
 drwxr-xr-x  4 george george    4096 Jan 14 16:08 .
 drwxr-xr-x  2 george george    4096 Jan 14 16:07 old
    #+end_example
-* Some Possible Next Steps*
+* Some Possible Next Steps
 ** DONE Tweak Collection
    - "collect all the things"
-** Let it run for a couple of days
-** Look at the raw data to get a feel for it
-** Install some tools to enable analysis
+** DONE Let it run for a couple of days
+** DONE Look at the raw data to get a feel for it
+** TODO Install some tools to enable analysis
+*** Streaming to S3 for Analysis
+     - Possibly stream into S3 to allow analysis with QuickSight or
+       other tools.
+     - modified version of this IOT->Firehose->Athena->Quicksite tool chain?
+       https://aws.amazon.com/blogs/big-data/derive-insights-from-iot-in-minutes-using-aws-iot-amazon-kinesis-firehose-amazon-athena-and-amazon-quicksight/
+     - Overkill?
+*** Traffic Visualization
+    Possibly who-talks-to-who-how-much graph with neo4j (or similar)
+    to enable visualization traffic from one host
+ 
+
+
