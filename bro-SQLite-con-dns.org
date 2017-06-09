@@ -4,7 +4,7 @@
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
 #+TITLE: Bro Log Analysis with SQLite combining conn and DNS logs
-#+DATE: <2017-01-22 20:10:09 Sunday>
+#+DATE: <2017-06-05 13:40:52 Monday>
 #+AUTHOR: George Jones
 #+EMAIL: eludom@gmail.com
 #+LANGUAGE: en
@@ -70,59 +70,61 @@ conn.sqlite
 * Summary Queries
 ** Raw sample of conn log
    #+begin_src shell  :results raw :exports both
-        exec 2>&1;set -e; set -u; set +x
-cat << "END" > query.sql
-.header on
-select *
-  from conn
-  limit 10;
-END
-sqlite3 /var/db/conn.sqlite -init query.sql    | \
-   sed 2i'-' | \
-   sed 's/^/|/' ||  true 
+             exec 2>&1;set -e; set -u; set +x
+     cat << "END" > query.sql
+     .header on
+     select *
+       from conn
+       order by ts desc
+       limit 10;
+     END
+     sqlite3 /var/db/conn.sqlite -init query.sql    | \
+        sed 2i'-' | \
+        sed 's/^/|/' ||  true 
    #+end_src
 
    #+RESULTS:
-   |               ts | uid                |                 id.orig_h | id.orig_p |                 id.resp_h | id.resp_p | proto | service |             duration | orig_bytes | resp_bytes | conn_state | local_orig | local_resp | missed_bytes | history   | orig_pkts | orig_ip_bytes | resp_pkts | resp_ip_bytes | tunnel_parents |
-   |------------------+--------------------+---------------------------+-----------+---------------------------+-----------+-------+---------+----------------------+------------+------------+------------+------------+------------+--------------+-----------+-----------+---------------+-----------+---------------+----------------|
-   | 1484501361.99727 | CRu4172Ne1F21pFxl7 |            192.168.86.105 |     60090 |             23.21.224.150 |        80 | tcp   | http    |    0.214453935623169 |        132 |        379 | SF         |          1 |          0 |            0 | ShADadFf  |         6 |           452 |         4 |           595 | (empty)        |
-   | 1484501362.11111 | CbOT684E73cUGhTVxb |            192.168.86.105 |     39298 |             23.21.214.238 |        80 | tcp   | http    |    0.103883028030396 |        136 |       4475 | SF         |          1 |          0 |            0 | ShADadtFf |        10 |           712 |         8 |          6347 | (empty)        |
-   | 1484501361.96315 | CrRoEo41vBuldgkMjb |            192.168.86.105 |     49010 |              192.168.86.1 |        53 | udp   | dns     |    0.146271944046021 |        215 |        300 | SF         |          1 |          1 |            0 | Dd        |         3 |           299 |         3 |           384 | (empty)        |
-   | 1484501332.40638 | C8CpTd4NXNlsU5DHMf | fe80::46d2:44ff:fe5e:ff4e |       135 | fe80::60f9:1123:e071:d508 |       136 | icmp  |         | 8.32080841064453e-05 |         24 |         16 | OTH        |          0 |          0 |            0 |           |         1 |            72 |         1 |            64 | (empty)        |
-   |  1484501353.4043 | CN1RfZ3wfMqK13qCCb |            192.168.86.102 |     64554 |            192.168.86.255 |      8612 | udp   |         |                      |            |            | S0         |          1 |          1 |            0 | D         |         1 |            44 |         0 |             0 | (empty)        |
-   | 1484501353.40534 | CnE17G3rZ9xFiVj1mj |            192.168.86.102 |     55721 |                 224.0.0.1 |      8612 | udp   |         |                      |            |            | S0         |          1 |          0 |            0 | D         |         1 |            44 |         0 |             0 | (empty)        |
-   | 1484501366.51257 | Cl6W871YeqhftBk3xc |            192.168.86.200 |     48160 |           239.255.255.250 |      1900 | udp   |         |                      |            |            | S0         |          1 |          0 |            0 | D         |         1 |           153 |         0 |             0 | (empty)        |
-   | 1484501433.69077 | C8TXZ11MHVlDQZAPpk |            192.168.86.105 |     49010 |              192.168.86.1 |        53 | udp   | dns     |     0.60005784034729 |        212 |        308 | SF         |          1 |          1 |            0 | Dd        |         3 |           296 |         3 |           392 | (empty)        |
-   | 1484501433.89287 | Ct9jcs1Re0hd23JZv4 |            192.168.86.200 |      5353 |               224.0.0.251 |      5353 | udp   | dns     |                      |            |            | S0         |          1 |          0 |            0 | D         |         1 |           105 |         0 |             0 | (empty)        |
-   | 1484501433.75607 | CrVCKK8lGVH3rZJci  |            192.168.86.105 |     34982 |            192.150.187.43 |       443 | tcp   | ssl     |     5.66959309577942 |        704 |      13196 | SF         |          1 |          0 |            0 | ShADadtfF |        20 |          1812 |        18 |         15588 | (empty)        |
+   |               ts | uid                |                 id.orig_h | id.orig_p |       id.resp_h | id.resp_p | proto | service |            duration | orig_bytes | resp_bytes | conn_state | local_orig | local_resp | missed_bytes | history  | orig_pkts | orig_ip_bytes | resp_pkts | resp_ip_bytes | tunnel_parents |
+   |------------------+--------------------+---------------------------+-----------+-----------------+-----------+-------+---------+---------------------+------------+------------+------------+------------+------------+--------------+----------+-----------+---------------+-----------+---------------+----------------|
+   | 1496675559.89047 | CARnQa1YVkeiWibYi9 |            192.168.86.118 |     32931 |    192.168.86.1 |        53 | udp   | dns     | 0.00429391860961914 |         32 |         48 | SF         |          1 |          1 |            0 | Dd       |         1 |            60 |         1 |            76 | (empty)        |
+   | 1496675558.50303 | Cl692h1U738Cxm8cAb |            192.168.86.118 |      5355 |     224.0.0.252 |      5355 | udp   | dns     |   0.386311769485474 |         69 |          0 | S0         |          1 |          0 |            0 | D        |         3 |           153 |         0 |             0 | (empty)        |
+   | 1496675558.50284 | CQSl1b20kTp6hebyz3 | fe80::60f9:1123:e071:d508 |      5355 |       ff02::1:3 |      5355 | udp   | dns     |   0.384637117385864 |         69 |          0 | S0         |          0 |          0 |            0 | D        |         3 |           213 |         0 |             0 | (empty)        |
+   | 1496675544.05812 | CNlfct2MiA49BBaGi  |            192.168.86.118 |     32931 |    192.168.86.1 |        53 | udp   | dns     | 0.00390195846557617 |         42 |        121 | SF         |          1 |          1 |            0 | Dd       |         1 |            70 |         1 |           149 | (empty)        |
+   | 1496675539.26323 | CmrzeE4H3so50fSDHj |            192.168.86.118 |     57904 |    8.30.124.216 |       443 | tcp   | ssl     |    20.4993720054626 |       1311 |        730 | SF         |          1 |          0 |            0 | ShADadfF |        10 |          1839 |         8 |          1154 | (empty)        |
+   | 1496675518.76339 | CWDM1W2IzjpsSnKyn3 |            192.168.86.118 |     56138 |    8.30.124.216 |       443 | tcp   | ssl     |    20.4981818199158 |       1314 |        730 | SF         |          1 |          0 |            0 | ShADadfF |        10 |          1842 |         8 |          1154 | (empty)        |
+   |  1496675512.8945 | CaxMWYaA0I1lQG9Ia  |            192.168.86.118 |     55563 | 239.255.255.250 |      1900 | udp   |         |    3.00381779670715 |        684 |          0 | S0         |          1 |          0 |            0 | D        |         4 |           796 |         0 |             0 | (empty)        |
+   | 1496675498.26182 | Coc3yo1FJxC1RhxlD3 |            192.168.86.118 |     55232 |    8.30.124.216 |       443 | tcp   | ssl     |    20.4998052120209 |       1311 |        730 | SF         |          1 |          0 |            0 | ShADadfF |        10 |          1839 |         8 |          1154 | (empty)        |
+   | 1496675477.76303 | C4Swz21mn8FPONtDUd |            192.168.86.118 |     53182 |    8.30.124.216 |       443 | tcp   | ssl     |    20.4985589981079 |       1312 |        730 | SF         |          1 |          0 |            0 | ShADadfF |        10 |          1840 |         8 |          1154 | (empty)        |
+   | 1496675457.26296 | CnLBcE3OtUEKhWIn5  |            192.168.86.118 |     52216 |    8.30.124.216 |       443 | tcp   | ssl     |    20.4977450370789 |       1311 |        730 | SF         |          1 |          0 |            0 | ShADadfF |        10 |          1839 |         8 |          1154 | (empty)        |
 
 ** Raw sample of dns log
    #+begin_src shell  :results raw :exports both
-        exec 2>&1;set -e; set -u; set +x
-cat << "END" > query.sql
-.header on
-select *
-  from dns
-  limit 10;
-END
-sqlite3 /var/db/dns.sqlite -init query.sql    | \
-   sed 2i'-' | \
-   sed 's/^/|/' ||  true 
+             exec 2>&1;set -e; set -u; set +x
+     cat << "END" > query.sql
+     .header on
+     select *
+       from dns
+       order by ts desc  
+       limit 10;
+     END
+     sqlite3 /var/db/dns.sqlite -init query.sql    | \
+        sed 2i'-' | \
+        sed 's/^/|/' ||  true 
    #+end_src
 
    #+RESULTS:
-   |               ts | uid                |      id.orig_h | id.orig_p |    id.resp_h | id.resp_p | proto | trans_id |                rtt | query                       | qclass | qclass_name | qtype | qtype_name | rcode | rcode_name | AA | TC | RD | RA | Z | answers                                                              | TTLs                                          | rejected |
-   |------------------+--------------------+----------------+-----------+--------------+-----------+-------+----------+--------------------+-----------------------------+--------+-------------+-------+------------+-------+------------+----+----+----+----+---+----------------------------------------------------------------------+-----------------------------------------------+----------|
-   | 1485120370.68344 | CUuu882zau6AcCroZh | 192.168.86.105 |     55386 | 192.168.86.1 |        53 | udp   |    20286 |   1.50012898445129 | www.uu.net                  |      1 | C_INTERNET  |     1 | A          |     0 | NOERROR    |  0 |  0 |  1 |  1 | 0 | global.mci.com,wac.c449.edgecastcdn.net,gp1.wac.v2cdn.net,72.21.91.8 | 299.000000,959.000000,3599.000000,3599.000000 |        0 |
-   | 1485120372.18357 | CUuu882zau6AcCroZh | 192.168.86.105 |     55386 | 192.168.86.1 |        53 | udp   |    33740 |  0.991898059844971 | global.mci.com              |      1 | C_INTERNET  |     1 | A          |     0 | NOERROR    |  0 |  0 |  1 |  1 | 0 | wac.c449.edgecastcdn.net,gp1.wac.v2cdn.net,72.21.91.8                | 959.000000,3599.000000,3599.000000            |        0 |
-   |  1485120373.1835 | CUuu882zau6AcCroZh | 192.168.86.105 |     55386 | 192.168.86.1 |        53 | udp   |    38499 |  0.031980037689209 | wac.c449.edgecastcdn.net    |      1 | C_INTERNET  |     1 | A          |     0 | NOERROR    |  0 |  0 |  1 |  1 | 0 | gp1.wac.v2cdn.net,72.21.91.8                                         | 3599.000000,3599.000000                       |        0 |
-   | 1485120373.21548 | CUuu882zau6AcCroZh | 192.168.86.105 |     55386 | 192.168.86.1 |        53 | udp   |    26937 | 0.0399818420410156 | gp1.wac.v2cdn.net           |      1 | C_INTERNET  |     1 | A          |     0 | NOERROR    |  0 |  0 |  1 |  1 | 0 | 72.21.91.8                                                           | 3599.000000                                   |        0 |
-   | 1485120441.37143 | CVbM5w4PPuOTm7GnKa | 192.168.86.105 |     55386 | 192.168.86.1 |        53 | udp   |    29534 |                    | www.compuserve              |      1 | C_INTERNET  |     1 | A          |     3 | NXDOMAIN   |  0 |  0 |  1 |  0 | 0 |                                                                      |                                               |        0 |
-   | 1485120433.20756 | C9klEB3xIeZwdTDfkj |   192.168.86.1 |      5353 |  224.0.0.251 |      5353 | udp   |     4446 |                    | 207.49.254.169.in-addr.arpa |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  1 |  0 | 0 |                                                                      |                                               |        0 |
-   | 1485120433.20756 | C9klEB3xIeZwdTDfkj |   192.168.86.1 |      5353 |  224.0.0.251 |      5353 | udp   |    55112 |                    | 198.86.168.192.in-addr.arpa |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  1 |  0 | 0 |                                                                      |                                               |        0 |
-   | 1485120450.03503 | CVbM5w4PPuOTm7GnKa | 192.168.86.105 |     55386 | 192.168.86.1 |        53 | udp   |    62976 | 0.0364599227905273 | www.compuserve.com          |      1 | C_INTERNET  |     1 | A          |     0 | NOERROR    |  0 |  0 |  1 |  1 | 0 | wppd-web.web.aol.com,wppd-web2.egslb.aol.com,149.174.97.149          | 278.000000,3578.000000,8.000000               |        0 |
-   | 1485120450.07149 | CVbM5w4PPuOTm7GnKa | 192.168.86.105 |     55386 | 192.168.86.1 |        53 | udp   |    35468 |  0.064100980758667 | wppd-web.web.aol.com        |      1 | C_INTERNET  |     1 | A          |     0 | NOERROR    |  0 |  0 |  1 |  1 | 0 | wppd-web2.egslb.aol.com,149.174.98.149                               | 3599.000000,29.000000                         |        0 |
-   | 1485120450.13559 | CVbM5w4PPuOTm7GnKa | 192.168.86.105 |     55386 | 192.168.86.1 |        53 | udp   |     7677 | 0.0480179786682129 | wppd-web2.egslb.aol.com     |      1 | C_INTERNET  |     1 | A          |     0 | NOERROR    |  0 |  0 |  1 |  1 | 0 | 149.174.97.149                                                       | 29.000000                                     |        0 |
+   |               ts | uid                |                 id.orig_h | id.orig_p |   id.resp_h | id.resp_p | proto | trans_id |              rtt | query                       | qclass | qclass_name | qtype | qtype_name | rcode | rcode_name | AA | TC | RD | RA | Z | answers     |       TTLs | rejected |
+   |------------------+--------------------+---------------------------+-----------+-------------+-----------+-------+----------+------------------+-----------------------------+--------+-------------+-------+------------+-------+------------+----+----+----+----+---+-------------+------------+----------|
+   | 1496674688.98712 | C5Q6Hg1wq84JKu1R3i |              192.168.86.1 |      5353 | 224.0.0.251 |      5353 | udp   |    28926 |                  | 118.86.168.192.in-addr.arpa |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  1 |  0 | 0 |             |            |        0 |
+   | 1496674678.89514 | CvSUcF48V5JU7xLemh | fe80::60f9:1123:e071:d508 |      5353 |    ff02::fb |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674678.89514 | CvSUcF48V5JU7xLemh | fe80::60f9:1123:e071:d508 |      5353 |    ff02::fb |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674678.89514 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674678.89514 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674676.89513 | CvSUcF48V5JU7xLemh | fe80::60f9:1123:e071:d508 |      5353 |    ff02::fb |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674676.89513 | CvSUcF48V5JU7xLemh | fe80::60f9:1123:e071:d508 |      5353 |    ff02::fb |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674676.89513 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674676.89513 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   |  1496674675.8872 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 | 13.0999178886414 | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |     0 | NOERROR    |  1 |  0 |  0 |  0 | 0 | linux.local | 120.000000 |        0 |
 
 ** Who's talking to 209.17.116.160? 
 
@@ -186,6 +188,64 @@ sqlite3 /var/db/dns.sqlite -init query.sql    | \
    |         8.8.8.8 |     53 | udp   |         77 |
    |     91.189.94.4 |    123 | udp   |         48 |
 
+** Raw sample of conn log - most recent
+   #+begin_src shell  :results raw :exports both
+             exec 2>&1;set -e; set -u; set +x
+     cat << "END" > query.sql
+     .header on
+     select *
+       from conn
+       order by ts desc
+       limit 10;
+     END
+     sqlite3 /var/db/conn.sqlite -init query.sql    | \
+        sed 2i'-' | \
+        sed 's/^/|/' ||  true 
+   #+end_src
+
+   #+RESULTS:
+   |               ts | uid                |                 id.orig_h | id.orig_p |    id.resp_h | id.resp_p | proto | service |            duration | orig_bytes | resp_bytes | conn_state | local_orig | local_resp | missed_bytes | history  | orig_pkts | orig_ip_bytes | resp_pkts | resp_ip_bytes | tunnel_parents |
+   |------------------+--------------------+---------------------------+-----------+--------------+-----------+-------+---------+---------------------+------------+------------+------------+------------+------------+--------------+----------+-----------+---------------+-----------+---------------+----------------|
+   | 1496674671.54153 | CKX75z61Pen77SPxc  | fe80::60f9:1123:e071:d508 |      5355 |    ff02::1:3 |      5355 | udp   | dns     |   0.347381114959717 |         69 |          0 | S0         |          0 |          0 |            0 | D        |         3 |           213 |         0 |             0 | (empty)        |
+   | 1496674671.53977 | CZ3nrk1IZNprw1xy77 |            192.168.86.118 |      5355 |  224.0.0.252 |      5355 | udp   | dns     |   0.347563028335571 |         69 |          0 | S0         |          1 |          0 |            0 | D        |         3 |           153 |         0 |             0 | (empty)        |
+   | 1496674661.26573 | Cx7gjr4LGprrUtIr3l |            192.168.86.118 |     32931 | 192.168.86.1 |        53 | udp   | dns     |    2.27884888648987 |         76 |        140 | SF         |          1 |          1 |            0 | Dd       |         2 |           132 |         2 |           196 | (empty)        |
+   | 1496674657.75864 | C6Smwl3kC77S0q0Qna |            192.168.86.118 |     58648 | 8.30.124.216 |       443 | tcp   | ssl     |    20.5019609928131 |       1312 |        730 | SF         |          1 |          0 |            0 | ShADadfF |        11 |          1904 |         9 |          1768 | (empty)        |
+   | 1496674637.25761 | CbNj7p4KG63Ym1hsZf |            192.168.86.118 |     57014 | 8.30.124.216 |       443 | tcp   | ssl     |    20.4993081092834 |       1311 |        730 | SF         |          1 |          0 |            0 | ShADadfF |        10 |          1851 |         9 |          1768 | (empty)        |
+   | 1496674636.16385 | C8pvTw4T7AN7q6S9bf |            192.168.86.118 |      5353 |  224.0.0.251 |      5353 | udp   | dns     |                     |            |            | S0         |          1 |          0 |            0 | D        |         1 |           110 |         0 |             0 | (empty)        |
+   | 1496674616.75609 | C6k4Bk49HbbXtQP62f |            192.168.86.118 |     55568 | 8.30.124.216 |       443 | tcp   | ssl     |    20.4993770122528 |       1312 |        730 | SF         |          1 |          0 |            0 | ShADadfF |        10 |          1840 |         8 |          1154 | (empty)        |
+   | 1496674611.88361 | CcCMDD1xFKpF0Imqhe | fe80::60f9:1123:e071:d508 |      5353 |     ff02::fb |      5353 | udp   | dns     |    14.4411249160767 |        322 |          0 | S0         |          0 |          0 |            0 | D        |         7 |           658 |         0 |             0 | (empty)        |
+   | 1496674611.88348 | CKQlXARnMmSzmA3t2  |            192.168.86.118 |      5353 |  224.0.0.251 |      5353 | udp   | dns     |     3.0018150806427 |        240 |          0 | S0         |          1 |          0 |            0 | D        |         6 |           408 |         0 |             0 | (empty)        |
+   | 1496674608.88703 | ClO7ux3MVLZqqqnJq7 |            192.168.86.118 |     32931 | 192.168.86.1 |        53 | udp   | dns     | 0.00188398361206055 |         32 |         48 | SF         |          1 |          1 |            0 | Dd       |         1 |            60 |         1 |            76 | (empty)        |
+
+
+** Raw sample of dns log - most recent
+   #+begin_src shell  :results raw :exports both
+             exec 2>&1;set -e; set -u; set +x
+     cat << "END" > query.sql
+     .header on
+     select *
+       from dns
+       order by ts desc
+       limit 10;
+     END
+     sqlite3 /var/db/dns.sqlite -init query.sql    | \
+        sed 2i'-' | \
+        sed 's/^/|/' ||  true 
+   #+end_src
+
+   #+RESULTS:
+   |               ts | uid                |                 id.orig_h | id.orig_p |   id.resp_h | id.resp_p | proto | trans_id |              rtt | query                       | qclass | qclass_name | qtype | qtype_name | rcode | rcode_name | AA | TC | RD | RA | Z | answers     |       TTLs | rejected |
+   |------------------+--------------------+---------------------------+-----------+-------------+-----------+-------+----------+------------------+-----------------------------+--------+-------------+-------+------------+-------+------------+----+----+----+----+---+-------------+------------+----------|
+   | 1496674688.98712 | C5Q6Hg1wq84JKu1R3i |              192.168.86.1 |      5353 | 224.0.0.251 |      5353 | udp   |    28926 |                  | 118.86.168.192.in-addr.arpa |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  1 |  0 | 0 |             |            |        0 |
+   | 1496674678.89514 | CvSUcF48V5JU7xLemh | fe80::60f9:1123:e071:d508 |      5353 |    ff02::fb |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674678.89514 | CvSUcF48V5JU7xLemh | fe80::60f9:1123:e071:d508 |      5353 |    ff02::fb |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674678.89514 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674678.89514 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674676.89513 | CvSUcF48V5JU7xLemh | fe80::60f9:1123:e071:d508 |      5353 |    ff02::fb |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674676.89513 | CvSUcF48V5JU7xLemh | fe80::60f9:1123:e071:d508 |      5353 |    ff02::fb |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674676.89513 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   | 1496674676.89513 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 |                  | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |       |            |  0 |  0 |  0 |  0 | 0 |             |            |        0 |
+   |  1496674675.8872 | Ccx9s71guCFdlVrDW7 |            192.168.86.118 |      5353 | 224.0.0.251 |      5353 | udp   |        0 | 13.0999178886414 | _googlecast._tcp.local      |      1 | C_INTERNET  |    12 | PTR        |     0 | NOERROR    |  1 |  0 |  0 |  0 | 0 | linux.local | 120.000000 |        0 |
 
 ** Test selecting from 2 tables in SQLite3
    #+begin_src shell  :results raw :exports both
@@ -215,14 +275,38 @@ sqlite3 /var/db/dns.sqlite -init query.sql    | \
    #+end_src
 
    #+RESULTS:
-   |         source |            dest | DNS                | proto | resp_p | orig_bytes | resp_bytes |
-   |----------------+-----------------+--------------------+-------+--------+------------+------------|
-   | 192.168.86.105 |  216.58.217.174 | cse.google.com     | icmp  |      3 |            |            |
-   | 192.168.86.105 | 184.168.221.104 | ohio-state.com     | tcp   |     80 |        139 |      25306 |
-   | 192.168.86.105 |  216.58.217.174 | plus.google.com    | icmp  |      3 |            |            |
-   | 192.168.86.105 |  216.58.217.164 | www.google.com     | tcp   |    443 |        874 |        319 |
-   | 192.168.86.105 |  216.58.217.164 | www.google.com     | udp   |    443 |       2324 |       1901 |
-   | 192.168.86.105 |  216.58.217.174 | ytimg.l.google.com | icmp  |      3 |            |            |
+   |         source |           dest | DNS                          | proto | resp_p | orig_bytes | resp_bytes |
+   |----------------+----------------+------------------------------+-------+--------+------------+------------|
+   | 192.168.86.105 | 173.194.66.189 | 0.client-channel.google.com  | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 0.client-channel.google.com  | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 1.client-channel.google.com  | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 1.client-channel.google.com  | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 11.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 11.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 13.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 13.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 14.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 14.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 15.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 15.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 17.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 17.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 18.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 18.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 19.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 19.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 2.client-channel.google.com  | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 2.client-channel.google.com  | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 20.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 20.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 21.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 21.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 22.client-channel.google.com | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 22.client-channel.google.com | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 3.client-channel.google.com  | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 3.client-channel.google.com  | udp   |    443 |      12750 |     105693 |
+   | 192.168.86.105 | 173.194.66.189 | 4.client-channel.google.com  | icmp  |      3 |        134 |          0 |
+   | 192.168.86.105 | 173.194.66.189 | 4.client-channel.google.com  | udp   |    443 |      12750 |     105693 |
 
 
 

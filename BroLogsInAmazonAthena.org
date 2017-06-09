@@ -1,0 +1,212 @@
+* What
+  This is a log of some experimentation using [[https://aws.amazon.com/athena][Amazon Athena]] to analyze
+  bro conn logs.
+* Why
+  - Learning
+  - Documenting the process
+  - Sharing so others can learn (and I can remember/repeat)
+* Who
+  George Jones <gmj@pobox.com>
+* When  
+  <2017-06-08>
+* Where
+  - Amazon Free Tier account
+  - Some Bro logs captured on my laptop
+* How - Initial Setup
+** Setup a free teir Amazon account
+   - https://aws.amazon.com/s/dm/optimization/server-side-test/free-tier/free_np/
+   - Install the CLI https://aws.amazon.com/cli/ and set up your
+     access keys.  Left as an exercise to the reader. RTF(ine)M.
+** Dump bro conn logs to .csv
+   - Grab some bro conn logs
+   - I did it using some of thse scripts https://github.com/eludom/HOWTO/blob/master/connAnalysis.org
+   - A sample looks like this
+
+     #+begin_example
+     george@ed HOWTO [master] $ head -4 conlog.csv
+ts,uid,id.orig_h,id.orig_p,id.resp_h,id.resp_p,proto,service,duration,orig_bytes,resp_bytes,conn_state,local_orig,local_resp,missed_bytes,history,orig_pkts,orig_ip_bytes,resp_pkts,resp_ip_bytes,tunnel_parents
+1496675559.89,CARnQa1YVkeiWibYi9,192.168.86.118,32931,192.168.86.1,53,udp,dns,0.00429391860962,32,48,SF,1,1,0,Dd,1,60,1,76,
+1496675558.5,Cl692h1U738Cxm8cAb,192.168.86.118,5355,224.0.0.252,5355,udp,dns,0.386311769485,69,0,S0,1,0,0,D,3,153,0,0,
+1496675558.5,CQSl1b20kTp6hebyz3,fe80::60f9:1123:e071:d508,5355,ff02::1:3,5355,udp,dns,0.384637117386,69,0,S0,0,0,0,D,3,213,0,0,
+
+     #+end_example
+
+|            ts | uid                |                 id.orig_h | id.orig_p |    id.resp_h | id.resp_p | proto | service |         duration | orig_bytes | resp_bytes | conn_state | local_orig | local_resp | missed_bytes | history | orig_pkts | orig_ip_bytes | resp_pkts | resp_ip_bytes | tunnel_parents |
+| 1496675559.89 | CARnQa1YVkeiWibYi9 |            192.168.86.118 |     32931 | 192.168.86.1 |        53 | udp   | dns     | 0.00429391860962 |         32 |         48 | SF         |          1 |          1 |            0 | Dd      |         1 |            60 |         1 |            76 |                |
+|  1496675558.5 | Cl692h1U738Cxm8cAb |            192.168.86.118 |      5355 |  224.0.0.252 |      5355 | udp   | dns     |   0.386311769485 |         69 |          0 | S0         |          1 |          0 |            0 | D       |         3 |           153 |         0 |             0 |                |
+|  1496675558.5 | CQSl1b20kTp6hebyz3 | fe80::60f9:1123:e071:d508 |      5355 |    ff02::1:3 |      5355 | udp   | dns     |   0.384637117386 |         69 |          0 | S0         |          0 |          0 |            0 | D       |         3 |           213 |         0 |             0 |                |
+
+** Create an S3 bucket
+   #+begin_example
+    aws s3 mb s3://gmj-logs
+    make_bucket: gmj-logs
+   #+end_example
+
+** Copy records (w/o header) to S3 bucket
+   #+begin_example
+   tail -n +2 conlog.csv > connlog-2017-06-08.csv
+   george@ed HOWTO [master] $ aws s3 cp connlog-2017-06-08.csv s3://gmj-logs/bro/connlog/
+   upload: ./connlog-2017-06-08.csv to s3://gmj-logs/bro/connlog/connlog-2017-06-08.csv
+   #+end_example
+
+** create a header for bulk-creating the Athena column names
+   - all lower case
+   - only alphanumeric and "_" allowed
+   - a simple approach is to make all types strings:
+
+  #+begin_example
+head -1 conlog.csv | sed 's/^/\(/' | sed 's/$/ string\)/' | sed 's/,/ string, /g' | sed 's/\./_/g'
+(ts string, uid string, id_orig_h string, id_orig_p string, id_resp_h string, id_resp_p string, proto string, service string, duration string, orig_bytes string, resp_bytes string, conn_state string, local_orig string, local_resp string, missed_bytes string, history string, orig_pkts string, orig_ip_bytes string, resp_pkts string, resp_ip_bytes string, tunnel_parents string)
+  #+end_example
+
+   - with a little editing, the time fields become double, bytes
+     become bigint, etc.  This is what we will use.
+
+#+begin_example
+     (ts double, uid string, id_orig_h string, id_orig_p bigint, id_resp_h string, id_resp_p bigint, proto string, service string, duration double, orig_bytes bigint, resp_bytes bigint, conn_state string, local_orig bigint, local_resp bigint, missed_bytes bigint, history string, orig_pkts bigint, orig_ip_bytes bigint, resp_pkts bigint, resp_ip_bytes bigint, tunnel_parents string)
+#+end_example
+
+** Log in to the console, go to Athena
+   - Set your region "Northern Virginia"/"us-east-1".
+     Things seem to work better there.
+   - https://console.aws.amazon.com/athena/home?region=us-east-1#query
+
+** Create a new database and load the .csv file
+   - Select "create table"
+   - Select "create new database"
+   - Name the database "connlogs"
+   - Select a table name "connlogs"
+   - Enter the base S3 path: s3://gmj-logs/bro/connlog/
+   - click "next"
+   - select "csv" as the type
+   - click next
+   - click "bulk add columns"
+   - cut and paste the table definition from the prior step:
+     #+begin_example
+     (ts double, uid string, id_orig_h string, id_orig_p bigint, id_resp_h string, id_resp_p bigint, proto string, service string, duration double, orig_bytes bigint, resp_bytes bigint, conn_state string, local_orig bigint, local_resp bigint, missed_bytes bigint, history string, orig_pkts bigint, orig_ip_bytes bigint, resp_pkts bigint, resp_ip_bytes bigint, tunnel_parents string)
+     #+end_example
+   - Click "next"
+   - Click "create table"
+   - Click "run query".  There will be a window with a query that creates the table and load
+     the data form the S3 bucket.
+
+** View, validate a sample of the data
+   - Click on the "eye" icon to bring up a query to sample the data =SELECT * FROM connlogs limit 10;=
+   - View and sanity check the data
+* Run a few queries
+** List top 10 sources by total connections
+   #+begin_src sql
+   SELECT count(*) as count, id_orig_h FROM connlogs group by id_orig_h order by count desc limit 10
+   #+end_src
+
+   #+begin_example
+ 	count	id_orig_h
+1	1447	192.168.86.118
+2	221	fe80::60f9:1123:e071:d508
+3	97	192.168.86.1
+4	54	192.168.86.147
+5	26	192.168.86.136
+6	22	192.168.86.146
+7	18	fe80::14f3:556f:50f7:9715
+8	14	fe80::46d2:44ff:fe5e:ff4e
+9	2	::
+10	1	0.0.0.0
+   #+end_example
+   
+** List top 10 sources by orig_ip_bytes
+  #+begin_src sql
+  SELECT sum(orig_ip_bytes) as bytes, id_orig_h FROM connlogs group by id_orig_h order by bytes desc limit 10
+  #+end_src
+
+  #+begin_example
+ 	bytes	id_orig_h
+1	4345205	192.168.86.118
+2	227486	192.168.86.1
+3	89211	fe80::60f9:1123:e071:d508
+4	87442	192.168.86.147
+5	74735	fe80::46d2:44ff:fe5e:ff4e
+6	6817	192.168.86.136
+7	4896	192.168.86.146
+8	3588	fe80::14f3:556f:50f7:9715
+9	328	0.0.0.0
+10	216	::
+  #+end_example
+
+** List top 10 destinations by connections
+  #+begin_src sql
+  SELECT count(*) as count, id_resp_h FROM connlogs group by id_resp_h order by count desc limit 10
+  #+end_src
+
+  #+begin_example
+  1	603	8.30.124.216
+  2	270	239.255.255.250
+  3	172	192.168.86.1
+  4	129	224.0.0.251
+  5	119	ff02::fb
+  6	78	172.217.3.46
+  7	74	224.0.0.252
+  8	74	ff02::1:3
+  9	44	ff02::16
+  10	41	224.0.1.178
+  #+end_example
+
+** List top 10 destinations by dest bytes
+  #+begin_src sql
+  SELECT sum(resp_ip_bytes) as bytes, id_resp_h FROM connlogs group by id_resp_h order by bytes desc limit 10
+  #+end_src
+
+  #+begin_example
+ 	bytes	id_resp_h
+1	29367653	91.189.91.23
+2	6720076	8.30.124.216
+3	3110163	70.32.26.28
+4	1867476	91.189.91.26
+5	1852979	172.217.3.46
+6	937418	78.46.82.80
+7	730989	74.125.192.109
+8	600378	72.21.91.110
+9	470921	54.230.204.34
+10	468246	216.58.217.132
+  #+end_example
+
+** List top 10 source IP/dest port combos
+   #+begin_src sql
+     SELECT count(*) as count, id_orig_h, proto, id_resp_p,
+	    sum(orig_ip_bytes) as orig_ip_bytes,
+	    sum(resp_ip_bytes) as resp_ip_bytes
+     FROM connlogs
+	  group by id_orig_h, proto, id_resp_p
+	  order by count desc
+	  limit 10
+   #+end_src
+
+   #+begin_example
+	count	id_orig_h	proto	id_resp_p	orig_ip_bytes	resp_ip_bytes
+ 	count	id_orig_h	proto	id_resp_p	orig_ip_bytes	resp_ip_bytes
+1	913	192.168.86.118	tcp	443	3166472	16859908
+2	171	192.168.86.118	udp	53	29128	50343
+3	153	192.168.86.118	udp	1900	121191	0
+4	93	fe80::60f9:1123:e071:d508	udp	5353	58382	0
+5	92	192.168.86.118	udp	5353	50674	0
+6	74	192.168.86.118	udp	5355	13434	0
+7	74	fe80::60f9:1123:e071:d508	udp	5355	17253	0
+8	45	192.168.86.147	udp	1900	80034	0
+9	43	fe80::60f9:1123:e071:d508	icmp	0	12392	0
+10	41	192.168.86.1	udp	1900	222899	0   
+   #+end_example
+
+* How much did this cost me?
+   - The experimentation for a day cost me $0.02
+   - See https://aws.amazon.com/athena/pricing/
+   - Compression and partitioning can be used to reduce costs in
+     production settings.
+
+
+
+
+
+
+
+
+
+

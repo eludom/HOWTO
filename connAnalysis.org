@@ -4,7 +4,7 @@
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
 #+TITLE: Bro connection log analysis with SQLite
-#+DATE: <2017-06-08 10:06:29 Thursday>
+#+DATE: <2017-06-08 10:08:21 Thursday>
 #+AUTHOR: George Jones
 #+EMAIL: eludom@gmail.com
 #+LANGUAGE: en
@@ -97,7 +97,7 @@ limit 99999999
 
 
 
-* Use python and sqlite3 tp ump bro con logs as csv
+* Use python and sqlite3 to dump bro con logs as csv
   #+begin_src python :results output :var fields=FIELDS startdate=STARTDATE enddate=ENDDATE limit=NO_LIMIT
     import sqlite3 as lite
     import sys
