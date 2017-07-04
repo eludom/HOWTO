@@ -3,8 +3,8 @@
 #+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t
 #+OPTIONS: num:2 p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
-#+TITLE: Using OAuth wtih offlineimap to read and send gmail
-#+DATE: <2016-12-17 13:03:30 Saturday>
+#+TITLE: Using OAuth wtih offlineimap and notmuch to read and send gmail
+#+DATE: <2017-07-04 12:16:40 Tuesday>
 #+AUTHOR: George M Jones
 #+EMAIL: gmj@pobox.com
 #+LANGUAGE: en
@@ -12,54 +12,17 @@
 #+EXCLUDE_TAGS: noexport
 #+CREATOR: Emacs 25.1.50.1 (Org mode 8.3.4)
 
-* The easy answer - Don't Use OAuth
-  To (re)enable the use of OAuth for gmail (sending and receiving),
-  log in to your gmail account using your favorite web browser, then
-  go here https://www.google.com/settings/security/lesssecureapps 
-  and click the "turn on" for "access for less secure apps"
-* Downloading Gmail with offlineimap and OAuth2
-  This is harder than it needs to be.
-
-  So, I thought I'd give [[https://notmuchmail.org/][notmuchmail]] a quick try this
-  morning because a) my mail is getting slow b) it's been a long time
-  since I hacked my email setup and c) it is clear that search
-  is one of the fundamental ways you need to interact with email in
-  modern times (short of abandoning it which is always tempting) and d)
-  gnus still feels clunky.
-
-  Simple, fast I thought.  But no.   The path leads through
-  [[http://docs.offlineimap.org/en/latest/][offlineimap]], which Google claims "app doesn't meet modern security standards", which a little
-  Googling translated to "does not use OAuth2", so now I'm in the
-  midst of setting up a Google Developer project to create tokens...
-
+* Install offline IMAP
+  Offline imap now has OAuth2 support built in
+   #+begin_example
+   apt-get install offlineimap
+   #+end_example
+* Set up and configure Gmail with offlineimap and OAuth2
 ** Setup and config files
    Here are the config files and steps for myself and others to include later
    versions of myself...
-*** Install offline IMAP
-    Build and install from source to get OAuth2 support (apt-get
-    version in Ubuntu archives did not have it as of
-    <2016-07-23 Sat>).  As of <2016-12-17> there were still recent
-    patches in the offlineimap github repo related to OAuth2 and
-    gmail, so I think using the latest source version is still wise.
-
-**** Git the latest source.
-
-    #+begin_example
-    git clone https://github.com/OfflineIMAP/offlineimap.git
-    #+end_example
-
-**** pip install six
-
-    I had to
-
-    =pip install six=
-
-    to make the latest github version (7.0.12, <2016-12-17>) install.
-
-
 *** Create Google ClientID and Secret for use generating OAuth tokens
     Mostly per instructions here http://christop.club/2014/01/19/sup/, 
-
 **** Create A Project
     - Go to the Google Developers Console
       https://console.cloud.google.com/
@@ -83,7 +46,6 @@
                        --client_id=xxx.apps.googleusercontent.com \
                        --client_secret=XXX
     #+end_example
-
     - Open the URL output to get a verification code
     #+begin_example
     To authorize token, visit this url and follow the directions:
@@ -104,71 +66,52 @@
     Mine currently looks like this:
 
     #+begin_example
-#+begin_example
 # Sample minimal config file.  Copy this to ~/.offlineimaprc and edit to
 # get started fast.
 
 [general]
-accounts = Fooologist
+accounts = gmj
 ii = ttyui
 
-[Account Fooologist]
-localrepository = FooologistLocal
-remoterepository = FooologistRemote
+[Account gmj]
+localrepository = gmjLocal
+remoterepository = gmjRemote
+postsynchook = ~/rc.local/notmuch-hook.sh # run 'notmuch new' and tagging
 
-[Repository FooologistLocal]
+[Repository gmjLocal]
 type = Maildir
-localfolders = ~/Mail/Fooologist
+localfolders = ~/Mail/gmj
 
-[Repository FooologistRemote]
+[Repository gmjRemote]
 #
 # Who are they?
 #
 type = Gmail
-# cert_fingerprint added by hand after first --dry-run
-cert_fingerprint = bbaf4b833c7b0ffde4eb46941342bc3c361c6a39
+sslcacertfile = /etc/ssl/certs/ca-certificates.crt  
 
 #
 # Who are we ?
 #
-remoteuser = fooologist@gmail.com
+remoteuser = me@example.com
 auth_mechanisms = XOAUTH2
-#oauth2_access_token = XXX
 #oauth2_request_url = https://accounts.google.com/o/oauth2/token
-oauth2_client_id = XXX
-oauth2_client_secret = XXX
-oauth2_refresh_token = XXX
+oauth2_client_id = ###-aaaaaaaaaaaaaaaaaaaaaaaaaa0.apps.googleusercontent.com
+oauth2_client_secret = aaaa-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+oauth2_refresh_token = #/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 #
 # What folders do we want to sync?
 #
-folderfilter = lambda foldername: re.search('(^2016$|2015)', foldername)
+
+folderfilter = lambda foldername: re.search('(^foo|^emacs|^2017)', foldername)
 #+end_example
-    
-#
-# What folders do we want to sync?
-#
-folderfilter = lambda foldername: re.search('(^2016$|2015)', foldername)
-    #+end_example
 
-*** Sort mail into bit-size folders on server before syncing
-**** Problem: Lots of mail, slow, large
-     I have a lot of mail in my online repositories, it will be large and take a long time to sync
-**** Solution: use maxage
-     maxage is supposed to limit downloads by absolute date or
-     relative age in days
-**** Problem: maxage is not supported (at least in my use case)
-     http://www.offlineimap.org/devel/2015/04/14/why-we-changed-maxage.html
-**** Solution: Pre-sort mail on server side before downloading.
-     - For instance, sort all mail from 2016 into a folder called
-       "2016"
-     - You may want this to happen automatically for new mail too.
-**** Problem: GMAIL GUI does not let you filter by date
-**** Solution: search and label
-     - apply search strings such as "after:2014/12/31 -label:2016" and add labels such as "2015"
-     - this will create (hopefully) folder (from the IMAP view of the
-       world) called "2015" and such.
-
+** Gmail filter (optional)
+   I set up a gmail filter that will *never match anything* and tag
+   all incomming non-matching messages (e.g. everything) with the
+   current year.  Tagged items in gmail look like folders in imap.
+   So I just have imap download things with the current year (see
+   =folderfilter=) in =.offlineimaprc= above.
 
 *** Do a dry run
     Consider using the =--dry-run= option the first time. You will get
@@ -185,7 +128,14 @@ Account sync eludom:
  [DRYRUN] Creating folder 2016[eludomLocal]    
     #+end_example
 
-    
+*** Run with IMAP debugging
+
+    You can run with imap debugging turned on to see more of what's happening.
+
+    #+begin_example
+    george@octo ~ $ offlineimap --d imap
+    #+end_example
+
 *** Do the initial sync
     #+begin_example
 george@octo securityfoo [master] $ offlineimap
@@ -210,16 +160,60 @@ Copy message UID 2364 (2364/2364) FooologistRemote:2015 -> FooologistLocal
 ...Finished account 'Fooologist' in 15:33
 george@octo securityfoo [master] $
     #+end_example
+
 ** Useful Links
+   - https://github.com/OfflineIMAP/offlineimap
+   - https://notmuchmail.org/
    - Basic .~/offlineimaprc example
    - Advanced .~/offlineimaprc example
    - Offlineimap .conf file that mentions OAuth2 :: https://github.com/OfflineIMAP/offlineimap/blob/master/offlineimap.conf
    - Usable advice on creating OAuth2 tokens :: http://christop.club/2014/01/19/sup/
    - https://gist.github.com/dabrahams/3030332
 
-* Sending Gmail with OAuth 2
-  This is, at the moment <2016-12-17> and unsolved problem/work in
-  progress.
+* Sending Gmail
+  My current .authinfo.gpg looks like this and seems to work.
+** .authinfo.gpg
+   #+begin_example
+   machine gmail-ephemeral login me@example.com password APP-PASSWORD
+   machine smtp.gmail.com login me@example.com port 587  password APP-PASSOWRD
+   machine gmail login me@example.com password APP-PASSWORD
+   #+end_example
+  - Earlier versions had the username and password and used plain plain  authentication.
+  - The account I'm setting up now uses two-factor authentication.  To
+    make this work, I had to set up an app-password per
+    https://support.google.com/accounts/answer/185833?hl=en
+    and use that in my .authinfo.gpg
 
-  I am trying to figure out how to to convince message mode in emacs
-  (smtpmail-send-it) to use OAuth for sending.
+* tagging mail when offlineimap runs
+
+  I have this
+  #+begin_example
+  postsynchook = ~/rc.local/notmuch-hook.sh # run 'notmuch new' and tagging  
+  #+end_example
+
+  in my =.offlineimaprc=, which runs this script to post-process/tag
+  my mail upon arrival
+
+  #+begin_example
+#! /bin/sh
+
+echo ""==== Running notmuch new at `date` ====""
+
+notmuch new
+
+echo Adding notmuch tags
+# See http://chrisdone.com/posts/emacs-mail
+
+notmuch tag +admin from:thing1
+notmuch tag +person from:thing2
+echo ""==== Done ====""
+echo
+echo
+
+#+end_example
+
+* crontab
+  I have a simple contab entry that runs offline imap
+  #+begin_example
+  0 * * * * /usr/bin/offlineimap >> /home/george/logs/offlineimap.log 2>&1
+  #+end_example
