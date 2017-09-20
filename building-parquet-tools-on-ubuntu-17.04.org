@@ -1,0 +1,98 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:2
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+#+TITLE: Building and running parquet-tools on Ubuntu 17.04
+#+DATE: <2017-09-20 13:07:07 Wednesday>
+#+AUTHOR: George Jones
+#+EMAIL: george.jones@redjack.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.1.1 (Org mode 9.0.9)
+
+* What
+  - Compile run parquet-tools locally on Ubuntu 17.04
+
+* Why ?
+  - to extract schema from parquet files for use with Amazon Athena/Redshift
+  - https://stackoverflow.com/questions/33883640/how-do-i-get-schema-column-names-from-parquet-file?answertab=active#tab-top
+
+* How
+  - Read the fine manual
+
+    https://github.com/apache/parquet-mr/blob/master/parquet-tools/README.md
+
+  - [ ] Get the source
+
+    #+begin_example
+    git clone https://github.com/apache/parquet-mr.git
+    #+end_example
+
+  - [ ] install maven
+
+    #+begin_example
+      sudo apt install maven
+    #+end_example
+
+  - [ ] install a real jdk
+
+    #+begin_example
+    sudo apt-get install openjdk-8-jdk
+    #+end_example
+
+  - [ ] install a C compiler that can compile old thrift
+
+    #+begin_example
+    sudo apt-get install clang
+    #+end_example
+
+  - [ ] Get and install an old version of thrift
+
+    #+begin_example
+    wget http://archive.apache.org/dist/thrift/0.7.0/thrift-0.7.0.tar.gz
+    tar -xvzf thrift-0.7.0.tar.gz
+    cd thrift-0.7.0/
+    CC=clang CXX=clang++ ./configure
+    CC=clang CXX=clang++ make
+    sudo make install
+    #+end_example
+
+  - Try to build (rinse, repeat, fix errors as they come up)
+
+    #+begin_example
+    cd parquet-mr
+    mvn clean package -Plocal
+    #+end_example
+
+* Put the jar file somewhere convenient
+  #+begin_example
+  mkdir ~/jars/
+  cp ./parquet-mr/parquet-tools/target/parquet-tools-1.9.1-SNAPSHOT.jar ~/jars/
+  #+end_example
+
+* Run it
+
+  #+begin_example
+  java -jar ~/jars/parquet-tools-1.9.1-SNAPSHOT.jar schema part-00000-0c7cafe3-364f-4687-907f-16fe5dff7844.snappy.parquet
+message spark_schema {
+  optional binary drg (UTF8);
+  optional group provider {
+    optional int64 id;
+    optional binary name (UTF8);
+    optional binary city (UTF8);
+    optional binary state (UTF8);
+    optional int64 zip;
+  }
+  optional binary rr (UTF8);
+  optional group charges {
+    optional double covered;
+    optional double total_pay;
+    optional double medicare_pay;
+  }
+}
+
+gmj@76x medicare_parquet [master] $
+  #+end_example
