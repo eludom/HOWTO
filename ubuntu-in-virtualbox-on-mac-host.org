@@ -1,0 +1,171 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+#+TITLE: Ubuntu In Virtualbox on a Mac Host
+#+SUBTITLE: Making things seamless
+#+DATE: <2017-09-09 08:40:57 Saturday>
+#+AUTHOR: George Jones
+#+EMAIL: georgejones@gmac.local
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.2.1 (Org mode 9.0.9)
+
+These are notes/HOWTOs on setting up Ubuntu inside Virtualbox running
+on an OSX host.   These were tested on Ubuntu 17.04 under virutalbox
+Version 5.1.26 r117224 (Qt5.6.2).
+
+* Install Ubuntu in Virtual Box On Mac
+** Things done via the VirtualBox GUI
+*** DONE Set the hotkey
+    I find that setting the OS hotkey to Left-Alt + Left+Ctrl does not
+    get in the way of any other apps (e.g. emacs)
+*** DONE Install guest additons
+    Install the latest guest additions
+*** DONE Shared clipboard
+    Set the shared clipboard to "bidirectional" so cut-and-paste will work.
+*** DONE Set up shared folders
+    I like to have one view of my files on the host an in VMs, so for
+    example, this file is in =~/home/public/HOWTO/= on the host.  I
+    share the ~/home into the vm as "home"
+
+    #+end_example
+
+*** DONE Make symlinks work
+    https://askubuntu.com/questions/446317/how-to-make-guest-os-follow-symlinks-from-shared-folder
+
+    On the host machine, for each VM, for each shared filesystem:
+
+    #+begin_example
+    VBoxManage list runningvms
+
+    VBoxManage setextradata VM_NAME VBoxInternal2/SharedFoldersEnableSymlinksCreate/SHARE_NAME 1
+    #+end_example
+
+** Things done via the command line on the installed system
+*** DONE Update the System
+
+    #+begin_src shell  :results output :exports src :dir /sudo::
+    exec 2>&1;date;set -e; set -u; # set -x
+    sudo apt-get --yes update  || true
+    sudo apt-get --yes upgrade || true
+    #+end_src
+
+    #+RESULTS:
+    #+begin_example
+    Sat Sep  9 07:23:51 EDT 2017
+    0% [Working]            Hit:1 http://us.archive.ubuntu.com/ubuntu zesty InRelease
+    0% [Waiting for headers]0% [1 InRelease gpgv 243 kB] [Waiting for headers] [Waiting for headers]                                                                        0% [Waiting for headers] [Waiting for headers]                                              Get:2 http://us.archive.ubuntu.com/ubuntu zesty-updates InRelease [89.2 kB]
+    0% [2 InRelease 73.5 kB/89.2 kB 82%] [Waiting for headers]                                                          0% [Waiting for headers] [Waiting for headers]0% [2 InRelease gpgv 89.2 kB] [Waiting for headers] [Waiting for headers]                                                                         Get:3 http://us.archive.ubuntu.com/ubuntu zesty-backports InRelease [89.2 kB]
+    0% [2 InRelease gpgv 89.2 kB] [3 InRelease 16.7 kB/89.2 kB 19%] [Waiting for he                                                                               0% [2 InRelease gpgv 89.2 kB] [Waiting for headers]                                                   0% [Waiting for headers]0% [3 InRelease gpgv 89.2 kB] [Waiting for headers]                                                   0% [Waiting for headers]                        Get:4 http://security.ubuntu.com/ubuntu zesty-security InRelease [89.2 kB]
+    0% [4 InRelease 38.0 kB/89.2 kB 43%]                                    0% [Working]0% [4 InRelease gpgv 89.2 kB]                             100% [Working]              Fetched 268 kB in 0s (469 kB/s)
+    Reading package lists... 0%Reading package lists... 0%Reading package lists... 1%Reading package lists... 5%Reading package lists... 5%Reading package lists... 10%Reading package lists... 10%Reading package lists... 12%Reading package lists... 12%Reading package lists... 12%Reading package lists... 12%Reading package lists... 12%Reading package lists... 12%Reading package lists... 12%Reading package lists... 12%Reading package lists... 43%Reading package lists... 43%Reading package lists... 71%Reading package lists... 74%Reading package lists... 74%Reading package lists... 91%Reading package lists... 91%Reading package lists... 91%Reading package lists... 91%Reading package lists... 92%Reading package lists... 92%Reading package lists... 92%Reading package lists... 92%Reading package lists... 93%Reading package lists... 93%Reading package lists... 94%Reading package lists... 94%Reading package lists... 94%Reading package lists... 94%Reading package lists... 94%Reading package lists... 94%Reading package lists... 94%Reading package lists... 94%Reading package lists... 94%Reading package lists... 94%Reading package lists... 95%Reading package lists... 95%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 96%Reading package lists... 97%Reading package lists... 97%Reading package lists... 97%Reading package lists... 97%Reading package lists... 97%Reading package lists... 97%Reading package lists... 97%Reading package lists... 97%Reading package lists... 97%Reading package lists... 97%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... 98%Reading package lists... Done
+    Reading package lists... 0%Reading package lists... 100%Reading package lists... Done
+    Building dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree       
+    Reading state information... 0%Reading state information... 0%Reading state information... Done
+    Calculating upgrade... 0%Calculating upgrade... 50%Calculating upgrade... Done
+    0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+#+end_example
+
+*** TODO update fsbab
+#+begin_src shell  :results output :exports src :dir /sudo::
+exec 2>&1;date;set -e; set -u; # set -x
+
+# Update fstab
+cat <<END >> /etc/fstab
+home	/home/gmj/home vboxsf uid=gmj,gid=gmj 0 0
+public	/home/gmj/public vboxsf uid=gmj,gid=gmj 0 0
+END
+
+
+# make mountpoints
+mkdir /home/gmj/home
+mkdir /home/gmj/public
+chown gmj /home/gmj/home /home/gmj/public
+
+
+# do the inital mounts
+
+#+end_src
+*** DONE Mount all filesystems from rc.local
+
+    Put this in /etc/rc.local
+
+#+begin_src shell  :results output :exports src :dir /sudo::
+cat <<END > /etc/rc.local
+#! /bin/bash
+mount -a
+exit 0
+END
+
+chmod +x /etc/rc.local  || true
+ls -l /etc/rc.local || true
+
+#+end_src
+
+#+RESULTS:
+: -rwxr-xr-x 1 root root 29 Sep  9 08:59 /etc/rc.local
+
+
+    We need to mount via fstab to get the maping to uid and gid right.
+
+#+RESULTS:
+: -rwxr-xr-x 1 root root 29 Sep  9 06:56 /etc/rc.local
+
+*** DONE Enable rc.local in systemd
+
+    #+begin_quote
+    And can it be, that life was oh so simple then, or has systemd
+    rewritten every line? ...
+    #+end_quote
+"
+    https://www.linuxbabe.com/linux-server/how-to-enable-etcrc-local-with-systemd
+
+#+begin_src shell  :results output :exports src :dir /sudo::
+exec 2>&1;date;set -e; set -u; # set -x
+
+cat <<END > /etc/systemd/system/rc-local.service
+[Unit]
+ Description=/etc/rc.local Compatibility
+ ConditionPathExists=/etc/rc.local
+
+[Service]
+ Type=forking
+ ExecStart=/etc/rc.local start
+ TimeoutSec=0
+ StandardOutput=tty
+ RemainAfterExit=yes
+ SysVStartPriority=99
+
+[Install]
+ WantedBy=multi-user.target
+END
+
+sudo systemctl enable rc-local || true
+sudo systemctl start rc-local.service || true
+sudo systemctl status rc-local.service || true
+echo Done.
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Sat Sep  9 09:00:04 EDT 2017
+Created symlink /etc/systemd/system/multi-user.target.wants/rc-local.service → /etc/systemd/system/rc-local.service.
+● rc-local.service - /etc/rc.local Compatibility
+   Loaded: loaded (/etc/systemd/system/rc-local.service; enabled; vendor preset: enabled)
+  Drop-In: /lib/systemd/system/rc-local.service.d
+           └─debian.conf
+   Active: active (exited) since Sat 2017-09-09 09:00:04 EDT; 12ms ago
+  Process: 28056 ExecStart=/etc/rc.local start (code=exited, status=0/SUCCESS)
+
+Sep 09 09:00:04 geox systemd[1]: Starting /etc/rc.local Compatibility...
+Sep 09 09:00:04 geox systemd[1]: Started /etc/rc.local Compatibility.
+Done.
+#+end_example
+
+*** TODO Stop compiz from hogging CPU
+    https://askubuntu.com/questions/128649/compiz-using-8-25-cpu-continually
+*** TODO Install my files,configs, packages...
+    - install pakcages, config files, etc.

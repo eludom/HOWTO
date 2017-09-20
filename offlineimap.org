@@ -48,18 +48,15 @@
     #+end_example
     - Open the URL output to get a verification code
     #+begin_example
-    To authorize token, visit this url and follow the directions:
-    https://accounts.google.com/o/oauth2/auth?client_id=XXX.apps.googleusercontent.com&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&scope=https%3A%2F%2Fmail.google.com%2F
-    #+end_example
-    - Paste in the verification code from the web page
-    #+begin_example
-    Enter verification code: PASTE-CODE-FROM-WEB-PAGE-HERE
-    #+end_example
-    - Save the Refresh and access tokens generated
-    #+begin_example
-    Refresh Token: XXX-SAVE-TEHSE
-    Access Token: XXX-SAVE-THESE
-    Access Token Expiration Seconds: 3600
+$ ./oauth2.py --generate_oauth2_token --client_id=xxxxxx.apps.googleusercontent.com --client_secret=yyyyyy
+To authorize token, visit this url and follow the directions:
+  https://accounts.google.com/o/oauth2/auth?client_id=zzzzzz.apps.googleusercontent.com&redirect_uri=urnaaaaaa&response_type=code&scope=httpsbbbbbbmail.google.com%2F
+[GO TO WEB PAGE, GET FOLLOWING CODE, ENTER]
+Enter verification code: xxxxxxx
+[SCRIPT SPITS OUT THE FOLLOWING]
+Refresh Token: XXXXXX-SAVE
+Access Token: YYYYYY-SAVE
+Access Token Expiration Seconds: 3600
     #+end_example
 ** Create and ~/.offlineimaprc file for GMAIL
     Add the apprpriate client_id, secrete and token from above
