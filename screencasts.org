@@ -1,0 +1,64 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:2
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+#+TITLE: Screencast HOWTO
+#+DATE: <2018-10-25 08:06:50 Thursday>
+#+AUTHOR: George Jones
+#+EMAIL: eludom@gmail.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.2.2 (Org mode 9.1.14)
+
+* What
+  These are some notes on creating screencasts on Ubnutu,
+  c.a. 2018-10-25
+
+* Why
+  I would like to create a few simple screencasts of emacs things,
+  probably to include Xah Fly Keys
+  http://ergoemacs.org/misc/ergoemacs_vi_mode.html
+
+
+* Who
+  George Jones
+
+* When
+  2018-10-25
+
+* Where
+  In the cloud...
+
+* How
+** Goals
+   - Record both audo and video
+   - Do it on Unbuntu
+   - Be able to upload so what a wide audience can view
+** Software
+*** Simplescreenrecorder to capture audio and video
+   #+begin_example
+   sudo apt-get install simplescreenrecorder
+   #+end_example
+** Process
+*** Recording with SimpleScreenRecorder
+   - Run simplescreenrecorder
+   - Be sure to select audio.   I left backend as PulseAudio
+   - Choose "record a fixed rectangle" and "select window"
+   - select the emacs (or other desired) window
+   - choose next
+   - enter a filename with a ".ogg" extention
+   - select OGG format and Theora codec
+   - move the SimpleScreenRecorder window out of the way (not on top
+     of target window) if neded
+   - hit "start recording"
+   - DO SOMETHING INTERESTING
+   - hit "save recording"
+** Uploading
+   - Upload to YouTube
+   - Save URL
+   - Publish
+
+** First results
+   https://youtu.be/2VBgj-7RIg4
