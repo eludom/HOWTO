@@ -1,0 +1,150 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:2
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+#+TITLE: Setting up a static public web site in S3
+#+DATE: <2018-12-29 17:27:43 Saturday>
+#+AUTHOR: George Jones
+#+EMAIL: eludom@gmail.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 27.0.50 (Org mode 9.1.14)
+
+* Intro - What, Why, When
+  - What :: This is notes on setting up a static public web site in S3
+  - Why :: I want to publish/blog things from [[https://ox-hugo.scripter.co/][ox-hugo]] and [[https://gohugo.io/][Hugo]]
+  - When :: c.a. 2018-12-27
+* How
+** DONE Create a free tier AWS account
+   - Details outside the scope
+   - Create a non-root user, allow S3 full control
+
+** DONE Be sure you can set up a DNS CNAME record somewhere
+   - You will need to have a DNS CNAME records that exactly matches
+     your bucket name, e.g.
+
+     #+begin_example
+     blogs.port111.com    CNAME   300		-		blogs.port111.com.s3-website.us-east-2.amazonaws.com
+     #+end_example
+
+** DONE Create the S3 bucket
+   In my case, the values/selections where:
+
+   - name :: blogs.port111.com
+   - log requests :: I chose to log requests to the same bucket under
+                     "logs/"
+   - allow creation of new public bucket policies :: UNCHECK these
+        config options
+
+** DONE Enable Static Website Hosting
+   - Under "permissions/properties" enable static website hosting
+   - choose "index.html" as index page
+
+** DONE Allow new public access bucket policies
+
+   Under permissions/public access policies uncheck these (e.g. they
+   should be FALSE).
+
+   + Block new public bucket policies (Recommended)
+   + Block public and cross-account access if bucket has public policies (Recommended)
+
+** DONE Add a bucket policy to make it public
+
+   - Under "permissions/bucket policy", add something like
+
+   #+begin_example
+{
+    "Version": "2008-10-17",
+    "Id": "PolicyForPublicWebsiteContent",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::blog.port111.com/*"
+        }
+    ]
+}
+   #+end_example
+
+** DONE Install the AWS CLI
+   Because, why click when you can type?
+   https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
+** DONE Configure AWS Credentials
+   You will need to get the access key id and secret access key for
+   your account
+
+   https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+
+   and type
+
+   #+begin_example
+   aws configure
+   #+end_example
+
+   You will also need to know your region, eg. /us-east-2/.  The human
+   name the region (e.g. "Ohio") is available in the top-right of the
+   console, and the mapping to region names can be found here
+   https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+
+** DONE Upload an index.html file
+   Upload index.html to the bucket.
+
+   #+begin_example
+   aws s3 cp index.html s3://blogs.port111.com/index.html
+   #+end_example
+** DONE Get the object URL
+   Get the object URL.  In the console GUI you can do this by browsing
+   the bucket to the object and look at the object overview
+   https://s3.us-east-2.amazonaws.com/blogs.port111.com/index.html
+** DONE Test raw object access in a browser
+   Browse to the index.html object URL in a browser, e.g. open
+   https://s3.us-east-2.amazonaws.com/blogs.port111.com/index.html
+   This will make sure it is publicly accessible.
+
+** DONE Set up a CNAME with your DNS provider
+   This assumes you already own your own domain and can edit the
+   zonefile.  Set up a CNAME similar to the following:
+
+   #+begin_example
+   blogs.port111.com    CNAME   300		-		blogs.port111.com.s3-website.us-east-2.amazonaws.com
+   #+end_example
+
+*** DNS Pro Tips
+    - Don't include the "http://" in the CNAME.   I did by mistake and
+      it took a while to figure out/debug
+    - Set the TTL low (300 seconds/5 minutes) at least while testing
+      so you can fix things
+** DONE Test access via the CNAME
+   In this case, I just pull the index.html file with wget.   You
+   could also aim a browser at it.
+   #+begin_example
+   wget http://blogs.port111.com/index.html
+   #+end_example
+** IN-PROGRESS Add actual content
+   - Use hugo, your static blog creation tool of choice etc to create
+     actual content and upload to the web site.   My first test of
+     hugo content looked like this:
+
+     #+begin_example
+gmj@ed public [master] $ pwd
+/home/gmj/home/public/blogs/hugo/gmj/public
+gmj@ed public [master] $ ls -F
+./  ../  404.html  about/  articles/  categories/  dist/  images/  index.html  index.xml  notes/  sitemap.xml  tags/
+gmj@ed public [master] $  aws s3 sync . s3://blogs.port111.com/
+     #+end_example
+* TODO Possible Future work
+  - SSL Encryption :: Probably should do this ...
+  - Route 53 :: I already have a domain, nameservers and zonefile
+                access, so I stuck with those
+  - Cloudflare  :: I *may* put up wildly popular content that needs
+                   fast services in Singapore and South Africa, but,
+                   for the moment, this is more than I need.
+
+* See Also
+   Here are a couple non-aws sites I looked at
+   - https://medium.freecodecamp.org/how-to-host-a-website-on-s3-without-getting-lost-in-the-sea-e2b82aa6cd38
+   - https://www.josephecombs.com/2018/03/05/how-to-make-an-AWS-S3-static-website-with-ssl
