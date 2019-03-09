@@ -1,0 +1,63 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:2
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+#+TITLE: Quick notes on syncing Google Photos to Linux
+#+DATE: <2019-03-09 09:37:52 Saturday>
+#+AUTHOR: George Jones
+#+EMAIL: eludom@gmail.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 27.0.50 (Org mode 9.1.14)
+
+Quick notes on syncing Google Photos to Linux (so I don't have to look
+this all up again)
+
+* TODO Sync Photos to Google Drive
+
+  https://support.google.com/drive/answer/6156103?visit_id=636877358358569239-3796794723&p=create_photos_folder&rd=2
+
+ #+begin_quote
+ Sync photos & videos to Google Drive
+To automatically add photos and videos from Google Photos to Google Drive:
+
+On your computer, go to drive.google.com.
+In the top left, click Settings Settings and then Settings.
+Turn on Create a Google Photos folder.
+Click Done.
+
+Notes:
+
+If you turn on "Auto add," you’ll find items uploaded to Google Photos in a "Google Photos" folder in My Drive.
+Google Photos is separate from the "Google Photos" folder in My Drive. Items in this folder won't be grouped in an album in Google Photos. If you add an item to this folder, it will not be added to your Google Photos library.
+If you use Backup and Sync on your computer, you’ll find items in the Computers tab in Drive.
+
+Sync photos & videos to Google Photos
+You can automatically sync photos and videos to your Google Photos library if they are in My Drive or the Computers tab in Google Drive.
+
+To see photos and videos from Google Drive in Google Photos:
+
+On your computer, go to photos.google.com/settings.
+Turn on Google Drive.
+ #+end_quote
+
+* TODO Wait a while
+  It takes a while for Google to start syncing the photos over
+
+* TODO Make sure "My Drive/Google Photos/*" is getting populated
+  They show up as YYYY/MM, e.g. 2019/02/*
+
+* TODO Install rclone
+  https://rclone.org/
+
+* TODO Configure rclone to access your google drive
+  https://rclone.org/docs/
+
+* TODO Sync files form Google to Local drive
+  #+begin_example
+  rclone -v copy gcloud:Google\ Photos/ ./googlePhotos/
+  #+end_example
+
+* TODO repeat or put in a cron job
